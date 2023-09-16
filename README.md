@@ -6,5 +6,4 @@
 3. `pip install -r requirements.txt` to install dependencies
 
 ## Start Server
-1. Run `source env/bin/activate` to change your environment
-2. `python3 main.py`
+1. Run `python3 main.py`

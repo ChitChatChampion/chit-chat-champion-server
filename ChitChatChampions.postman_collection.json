@@ -1,0 +1,226 @@
+
+{
+	"info": {
+		"_postman_id": "a44d72b1-183d-4c73-bd8a-05f8e7c04341",
+		"name": "Chitchat Production",
+		"schema": "https://schema.getpostman.com/json/collection/v2.1.0/collection.json"
+	},
+	"item": [
+		{
+			"name": "User Config",
+			"request": {
+				"method": "GET",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Token {{AuthToken}}",
+						"type": "text"
+					}
+				],
+				"url": {
+					"raw": "{{API_DOMAIN}}/user/config/",
+					"host": [
+						"{{API_DOMAIN}}"
+					],
+					"path": [
+						"user",
+						"config",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Dictionary",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Token {{AuthToken}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"text\":\"artificial\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{API_DOMAIN}}/translations/search/",
+					"host": [
+						"{{API_DOMAIN}}"
+					],
+					"path": [
+						"translations",
+						"search",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Detect Languages",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Token {{AuthToken}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"text\":\"Thank you so much! 老人家! 私はばか。ありがとうございます apa khabar! khabar baik!\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{API_DOMAIN}}/translations/detect_language/",
+					"host": [
+						"{{API_DOMAIN}}"
+					],
+					"path": [
+						"translations",
+						"detect_language",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Translate",
+			"request": {
+				"method": "POST",
+				"header": [
+					{
+						"key": "Authorization",
+						"value": "Token {{AuthToken}}",
+						"type": "text"
+					}
+				],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"text\":\"I am planning to travel to Malaysia before the summer arrives! I am looking forward to it immensely. I am also hoping to get a chance to ski (smile)!',\",\n    \"languages\": [\"English\"],\n    \"contexts\":[\"The formality level should be informal\", \"This is an sms message\"],\n    \"target_language\":\"Japanese\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{API_DOMAIN}}/translations/translate/",
+					"host": [
+						"{{API_DOMAIN}}"
+					],
+					"path": [
+						"translations",
+						"translate",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create User",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"t.karwi@yahoo.com\",\n    \"password\": \"wi240499\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{API_DOMAIN}}/user/create/",
+					"host": [
+						"{{API_DOMAIN}}"
+					],
+					"path": [
+						"user",
+						"create",
+						""
+					]
+				}
+			},
+			"response": []
+		},
+		{
+			"name": "Create Token",
+			"request": {
+				"method": "POST",
+				"header": [],
+				"body": {
+					"mode": "raw",
+					"raw": "{\n    \"email\": \"t.karwi@yahoo.com\",\n    \"password\": \"wi240499\"\n}",
+					"options": {
+						"raw": {
+							"language": "json"
+						}
+					}
+				},
+				"url": {
+					"raw": "{{API_DOMAIN}}/user/token/",
+					"host": [
+						"{{API_DOMAIN}}"
+					],
+					"path": [
+						"user",
+						"token",
+						""
+					]
+				}
+			},
+			"response": []
+		}
+	],
+	"event": [
+		{
+			"listen": "prerequest",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		},
+		{
+			"listen": "test",
+			"script": {
+				"type": "text/javascript",
+				"exec": [
+					""
+				]
+			}
+		}
+	],
+	"variable": [
+		{
+			"key": "AuthToken",
+			"value": "15aaf225158e354260fd4eeaedfba8a821a697b2"
+		},
+		{
+			"key": "API_DOMAIN",
+			"value": "https://api.chitchat.com/api"
+		},
+		{
+			"value": ""
+		}
+	]
+}

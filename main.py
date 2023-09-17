@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 # encoding: utf-8
+from bson import ObjectId
 import configparser
 import os
 from flask import Flask, request, json, jsonify
@@ -21,6 +22,7 @@ config = configparser.ConfigParser()
 config.read(os.path.abspath(os.path.join(".ini")))
 app.config['MONGO_URI'] = config['TEST']['DB_URI']
 mongo = PyMongo(app)
+questions_collection = mongo.db.Questions
 
 load_dotenv()
 
@@ -65,7 +67,7 @@ async def create_csc_room():
 
         # Insert the generated questions into the database
         for question in generated_questions:
-            mongo.db.questions.insert_one({
+            questions_collection.insert_one({
                     'content': question.content
             })
 
@@ -90,9 +92,6 @@ def check_database():
 @app.route('/questions', methods=['GET'])
 def get_all_questions():
     try:
-        # Access the questions collection in your MongoDB
-        questions_collection = mongo.db.Questions
-
         # Query the database to retrieve all questions
         all_questions = questions_collection.find({}, {'_id': 0})  # Exclude _id field in the result
 
@@ -110,20 +109,53 @@ def get_all_questions():
 @app.route('/questions', methods=['POST'])
 def add_question():
     try:
-        # Access the questions collection in your MongoDB
-        questions_collection = mongo.db.Questions
-
         # Get the question from the request body
         # e.g. for testing: {"question": "What is your favorite programming language?"}
-        question = request.json.get('question')
+        question = Question(request.json.get('question'))
 
         # Insert the question into the database
         questions_collection.insert_one({
-            'content': question
+            'content': question.content
         })
 
         # Return a 200 OK response if the operation succeeds
         return jsonify({"message": "Question added successfully"}), 200
+    except Exception as e:
+        # Handle any exceptions that might occur during the database operation
+        error_message = f"Error: {str(e)}"
+        return jsonify({"message": error_message}), 500
+
+# Define a route to update a question in the database
+@app.route('/questions/<question_id>', methods=['PUT'])
+def update_question(question_id):
+    try:
+        # Get the question from the request body
+        # e.g. for testing: {"question": "What is your favorite programming language?"}
+        question = Question(request.json.get('question'))
+
+        # Update the question in the database with the question_id
+        questions_collection.update_one({'_id': ObjectId(question_id)}, {
+            '$set': {
+                'content': question.content
+            }
+        })
+
+        # Return a 200 OK response if the operation succeeds
+        return jsonify({"message": "Question updated successfully"}), 200
+    except Exception as e:
+        # Handle any exceptions that might occur during the database operation
+        error_message = f"Error: {str(e)}"
+        return jsonify({"message": error_message}), 500
+    
+# Define a route to delete a question from the database
+@app.route('/questions/<question_id>', methods=['DELETE'])
+def delete_question(question_id):
+    try:
+        # Delete the question from the database with the question_id
+        questions_collection.delete_one({'_id': question_id})
+
+        # Return a 200 OK response if the operation succeeds
+        return jsonify({"message": "Question deleted successfully"}), 200
     except Exception as e:
         # Handle any exceptions that might occur during the database operation
         error_message = f"Error: {str(e)}"

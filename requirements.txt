@@ -13,7 +13,7 @@ Flask==2.3.3
 gunicorn==20.1.0
 idna==3.4
 multidict==6.0.4
-openai==0.26.1
+openai==0.28.0
 psycopg2==2.9.5
 python-decouple==3.7
 python-dotenv==1.0.0

@@ -1,7 +1,9 @@
 #!/usr/bin/env python
 # encoding: utf-8
+import configparser
 import os
-from flask import Flask, request, json
+from flask import Flask, request, json, jsonify
+from flask_pymongo import PyMongo
 import openai
 import prompts
 from utils import getBaseContext, getCscContext
@@ -9,6 +11,12 @@ from dotenv import load_dotenv
 
 app = Flask(__name__)
 MODEL = "gpt-3.5-turbo-16k"
+
+# Configure database
+config = configparser.ConfigParser()
+config.read(os.path.abspath(os.path.join(".ini")))
+app.config['MONGO_URI'] = config['TEST']['DB_URI']
+mongo = PyMongo(app)
 
 load_dotenv()
 
@@ -44,6 +52,16 @@ def create_csc_room():
     )
 
     return response
+
+# Define a route to check if the database is accessible
+@app.route('/check_database', methods=['GET'])
+def check_database():
+    try:
+        # Use the PyMongo connection to ping the database
+        mongo.db.command('ping')
+        return jsonify({"message": "Database is accessible"})
+    except Exception as e:
+        return jsonify({"message": f"Database is not accessible: {str(e)}"})
 
 
 app.run(port=8080, debug=True)

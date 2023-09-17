@@ -24,9 +24,6 @@ config.read(os.path.abspath(os.path.join(".ini")))
 app.config['MONGO_URI'] = config['TEST']['DB_URI']
 mongo = PyMongo(app)
 
-# # Register the database routes blueprint
-# app.register_blueprint(database_routes)
-
 load_dotenv()
 
 print(os.getenv("OPENAI_KEY"))

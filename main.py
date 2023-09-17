@@ -1,9 +1,8 @@
 #!/usr/bin/env python
 # encoding: utf-8
-from bson import ObjectId
 import configparser
 import os
-from flask import Flask, request, json, jsonify
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_pymongo import PyMongo
 import openai
@@ -11,6 +10,8 @@ import prompts
 from utils import getBaseContext, getCscContext
 from dotenv import load_dotenv
 from question import Question
+from database import check_db, get_all_questions, add_question_db, insert_questions, update_question_db, \
+    delete_question_db
 
 
 app = Flask(__name__)
@@ -22,7 +23,9 @@ config = configparser.ConfigParser()
 config.read(os.path.abspath(os.path.join(".ini")))
 app.config['MONGO_URI'] = config['TEST']['DB_URI']
 mongo = PyMongo(app)
-questions_collection = mongo.db.Questions
+
+# # Register the database routes blueprint
+# app.register_blueprint(database_routes)
 
 load_dotenv()
 
@@ -65,11 +68,7 @@ async def create_csc_room():
             generated_question = Question(choice['message']['content'])
             generated_questions.append(generated_question)
 
-        # Insert the generated questions into the database
-        for question in generated_questions:
-            questions_collection.insert_one({
-                    'content': question.content
-            })
+        inserted_qn_ids = insert_questions(generated_questions)
 
         return response
     except Exception as e:
@@ -77,36 +76,19 @@ async def create_csc_room():
         return jsonify({"message": f"Error: {str(e)}"})
 
 
+# FOR TESTING PURPOSES ONLY
 # Define a route to check if the database is accessible
 @app.route('/check_database', methods=['GET'])
 def check_database():
-    try:
-        # Use the PyMongo connection to ping the database
-        mongo.db.command('ping')
-        return jsonify({"message": "Database is accessible"})
-    except Exception as e:
-        return jsonify({"message": f"Database is not accessible: {str(e)}"})
-    
+    return check_db()
 
 # Define a route to get all the questions in the database
 @app.route('/questions', methods=['GET'])
-def get_all_questions():
-    try:
-        # Query the database to retrieve all questions
-        all_questions = questions_collection.find({}, {'_id': 0})  # Exclude _id field in the result
-
-        # Convert the result to a list of dictionaries
-        questions_list = list(all_questions)
-
-        # Return the list of questions as JSON
-        return jsonify(questions_list)
-    except Exception as e:
-        # Handle any exceptions that might occur during the database operation
-        error_message = f"Error: {str(e)}"
-        return jsonify({"message": error_message}), 500  # Return a 500 Internal Server Error response
+def get_questions():
+    return get_all_questions()
 
 # Define a route to add a question to the database
-@app.route('/questions', methods=['POST'])
+@app.route('/questions/add', methods=['POST'])
 def add_question():
     try:
         # Get the question from the request body
@@ -114,9 +96,7 @@ def add_question():
         question = Question(request.json.get('question'))
 
         # Insert the question into the database
-        questions_collection.insert_one({
-            'content': question.content
-        })
+        inserted_qid = add_question_db(question)
 
         # Return a 200 OK response if the operation succeeds
         return jsonify({"message": "Question added successfully"}), 200
@@ -126,19 +106,15 @@ def add_question():
         return jsonify({"message": error_message}), 500
 
 # Define a route to update a question in the database
-@app.route('/questions/<question_id>', methods=['PUT'])
+@app.route('/questions/update/<question_id>', methods=['PUT'])
 def update_question(question_id):
     try:
         # Get the question from the request body
         # e.g. for testing: {"question": "What is your favorite programming language?"}
-        question = Question(request.json.get('question'))
+        new_question = Question(request.json.get('question'))
 
         # Update the question in the database with the question_id
-        questions_collection.update_one({'_id': ObjectId(question_id)}, {
-            '$set': {
-                'content': question.content
-            }
-        })
+        update_question_db(question_id, new_question)
 
         # Return a 200 OK response if the operation succeeds
         return jsonify({"message": "Question updated successfully"}), 200
@@ -148,12 +124,11 @@ def update_question(question_id):
         return jsonify({"message": error_message}), 500
     
 # Define a route to delete a question from the database
-@app.route('/questions/<question_id>', methods=['DELETE'])
+@app.route('/questions/delete/<question_id>', methods=['DELETE'])
 def delete_question(question_id):
     try:
         # Delete the question from the database with the question_id
-        questions_collection.delete_one({'_id': question_id})
-
+        delete_question_db(question_id)
         # Return a 200 OK response if the operation succeeds
         return jsonify({"message": "Question deleted successfully"}), 200
     except Exception as e:

@@ -6,17 +6,24 @@ from flask import Flask, request, jsonify
 from flask_cors import CORS
 from flask_pymongo import PyMongo
 import openai
-import prompts
-from utils import getBaseContext, getCscContext
+
+from utils.utils import getBaseContext, getCscContext
 from dotenv import load_dotenv
 from question import Question
+from quart import Quart
 from database import check_db, get_all_questions, add_question_db, insert_questions, update_question_db, \
     delete_question_db
 
+app = Quart(__name__)
 
-app = Flask(__name__)
 MODEL = "gpt-3.5-turbo"
-cors = CORS(app) # Update to specific origins for production
+
+@app.route('/', methods=['GET'])
+def query_records():
+    return {"message": "Hello World!"}
+
+# TODO: temporarily remove this as it's causing an error on my side
+# cors = CORS(app) # Update to specific origins for production
 
 # Configure database
 config = configparser.ConfigParser()
@@ -27,38 +34,6 @@ mongo = PyMongo(app)
 load_dotenv()
 
 openai.api_key = os.getenv("OPENAI_KEY")
-
-@app.route('/', methods=['GET'])
-def query_records():
-    return {"message": "Hello World!"}
-
-# Creates a CSC room
-@app.route('/room/csc', methods=["POST"])
-async def create_csc_room():
-    age, familiarity, purpose, group_description = getBaseContext(request.json.get('baseContext'))
-    # TODO: limit the number of cards for our token sanity
-    number_of_cards = getCscContext(request.json.get('cscContext'))
-    if number_of_cards > 20:
-        return {"message": "Too many cards requested"}, 400
-
-    prompt = f"The age range of the participants in the ice-breaker session is {age} years old, they are currently {familiarity}, and the purpose of the ice-breaker session is {purpose}. Other information about the ice-breaker session is that: {group_description}. The number of questions I want you to generate is {number_of_cards}."
-
-    messages = [
-        {"role": "system", "content": prompts.system_prompt},
-        {"role": "user", "content": prompts.user_example_csc},
-        {"role": "assistant", "content": prompts.assistant_example_csc},
-        {"role": "user", "content": prompt}
-    ]
-
-    # TODO: create a promise for this that adds something to the db when it resolves. 
-    response = openai.ChatCompletion.create(
-        model=MODEL,
-        messages=messages,
-        temperature=0.7,  # this is the degree of randomness of the model's output
-    )
-    result = response.get('choices')[0].get('message').get('content')
-
-    return result
 
 # FOR TESTING PURPOSES ONLY
 # Define a route to check if the database is accessible
@@ -118,5 +93,7 @@ def delete_question(question_id):
         # Handle any exceptions that might occur during the database operation
         error_message = f"Error: {str(e)}"
         return jsonify({"message": error_message}), 500
+
+import csc.routes
 
 app.run(port=8080, debug=True)

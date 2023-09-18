@@ -1,5 +1,5 @@
 from __main__ import app, MODEL
-from flask import request, jsonify
+from quart import request, jsonify
 import prompts.prompts as prompts
 import asyncio
 import logging

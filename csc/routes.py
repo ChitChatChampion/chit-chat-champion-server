@@ -2,8 +2,10 @@ from __main__ import app, MODEL
 from quart import request, jsonify
 import prompts.prompts as prompts
 import asyncio
+import json
 import logging
 import openai
+from database import insert_questions
 from nanoid import generate
 from utils.utils import getBaseContext, getCscContext
 
@@ -19,27 +21,39 @@ async def hello():
 
 async def query_openai(room_id, messages):
     logging.info("{room_id}: Querying OpenAI")
-    response = await openai.ChatCompletion.create(
+    response = openai.ChatCompletion.create(
         model=MODEL,
         messages=messages,
         temperature=0.7,
     )
-    questions = response.get('choices')[0].get('message').get('content')
+    questions = response['choices'][0]['message']['content']
 
     logging.info(f"{room_id}: Response obtained from OpenAI: {questions}")
 
     # add questions in the form of room-id to questions key value pairs
     logging.info(f"{room_id}: Adding questions to database")
-
-    # TODO: add these questions to the database
+    
+    await add_gpt_questions_to_db(questions)
 
     logging.info(f"{room_id}: Done adding questions to database")
+
+async def add_gpt_questions_to_db(questions):
+    # remove the last comma
+    if questions[-3] == ",":
+        # so that json.loads doesn't throw an error
+        questions = questions[:-3] + "]"
+    if questions[0] != "[":
+        # if there is only one question we make it a list
+        await insert_questions([questions])
+    else:
+        await insert_questions(json.loads(questions))
 
 # Creates a CSC room
 @app.route('/room/csc', methods=["POST"])
 async def create_csc_room():
-    age, familiarity, purpose, group_description = getBaseContext(request.json.get('baseContext'))
-    number_of_cards = getCscContext(request.json.get('cscContext'))
+    request_json = await request.json
+    age, familiarity, purpose, group_description = getBaseContext(request_json.get('baseContext'))
+    number_of_cards = getCscContext(request_json.get('cscContext'))
 
     if number_of_cards > 20:
         return {"message": "Too many cards requested"}, 400
@@ -56,6 +70,6 @@ async def create_csc_room():
     # TODO: check for collisions in room id
     room_id = generate(size=6)
 
-    query_openai(room_id, messages)
+    await query_openai(room_id, messages)
 
     return {room_id: room_id}

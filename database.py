@@ -40,22 +40,17 @@ async def get_all_questions():
         error_message = f"Error: {str(e)}"
         return jsonify({"message": error_message}), 500  # Return a 500 Internal Server Error response
 
-# Returns inserted qn ids for now
-def insert_questions(generated_questions):
-    inserted_qn_ids = []
+# Insert a list of questions e.g. ["Question 1?", "Question 2?", "Question 3?"]
+async def insert_questions(generated_questions: list):
     # Insert the generated questions into the database
     for question in generated_questions:
-        inserted_qn = questions_collection.insert_one({
-                'content': question.content
-        })
-        inserted_qn_ids.append(str(inserted_qn.inserted_id))
-    return inserted_qn_ids
+        await add_question_db(question)
 
 async def add_question_db(question):
     inserted_qn = await questions_collection.insert_one({
-        'content': question.content
+        'content': question
     })
-    return str(inserted_qn.inserted_id)
+    return inserted_qn
 
 async def update_question_db(question_id, new_question):
     questions_collection.update_one({'_id': ObjectId(question_id)}, {

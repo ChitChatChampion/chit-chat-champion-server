@@ -7,7 +7,6 @@ from motor.motor_asyncio import AsyncIOMotorClient
 import openai
 
 from dotenv import load_dotenv
-from question import Question
 from quart import Quart
 from database import check_db, get_all_questions, add_question_db, update_question_db, delete_question_db
 
@@ -53,10 +52,10 @@ async def add_question():
         # Get the question from the request body
         # e.g. for testing: {"question": "What is your favorite programming language?"}
         question_data = await request.json
-        question = Question(question_data.get('question'))
+        question = question_data.get('question')
 
         # Insert the question into the database
-        inserted_qid = await add_question_db(question)
+        await add_question_db(question)
 
         # Return a 200 OK response if the operation succeeds
         return jsonify({"message": "Question added successfully"}), 200
@@ -72,7 +71,7 @@ async def update_question(question_id):
         # Get the question from the request body
         # e.g. for testing: {"question": "What is your favorite programming language?"}
         question_data = await request.json
-        new_question = Question(question_data.get('question'))
+        new_question = question_data.get('question')
 
         # Update the question in the database with the question_id
         await update_question_db(question_id, new_question)

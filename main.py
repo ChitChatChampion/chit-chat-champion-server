@@ -6,20 +6,14 @@ from quart import Quart, request, jsonify
 from motor.motor_asyncio import AsyncIOMotorClient
 import openai
 
-from utils.utils import getBaseContext, getCscContext
 from dotenv import load_dotenv
 from question import Question
 from quart import Quart
-# from database import check_db, get_all_questions, add_question_db, insert_questions, update_question_db, \
-#     delete_question_db
-from database import check_db, get_all_questions, add_question_db
+from database import check_db, get_all_questions, add_question_db, update_question_db, delete_question_db
 
 app = Quart(__name__)
 
 MODEL = "gpt-3.5-turbo"
-
-# TODO: temporarily remove this as it's causing an error on my side
-# cors = CORS(app) # Update to specific origins for production
 
 # Configure database
 config = configparser.ConfigParser()
@@ -46,7 +40,7 @@ async def check_database():
     res = await check_db()
     return res
 
-# # Define a route to get all the questions in the database
+# Define a route to get all the questions in the database
 @app.route('/questions', methods=['GET'])
 async def get_questions():
     res = await get_all_questions()
@@ -71,50 +65,37 @@ async def add_question():
         error_message = f"Error: {str(e)}"
         return jsonify({"message": error_message}), 500
 
-# # Define a route to update a question in the database
-# @app.route('/questions/update/<question_id>', methods=['PUT'])
-# def update_question(question_id):
-#     try:
-#         # Get the question from the request body
-#         # e.g. for testing: {"question": "What is your favorite programming language?"}
-#         new_question = Question(request.json.get('question'))
+# Define a route to update a question in the database
+@app.route('/questions/update/<question_id>', methods=['PUT'])
+async def update_question(question_id):
+    try:
+        # Get the question from the request body
+        # e.g. for testing: {"question": "What is your favorite programming language?"}
+        question_data = await request.json
+        new_question = Question(question_data.get('question'))
 
-#         # Update the question in the database with the question_id
-#         update_question_db(question_id, new_question)
-#         # Return a 200 OK response if the operation succeeds
-#         return jsonify({"message": "Question updated successfully"}), 200
-#     except Exception as e:
-#         # Handle any exceptions that might occur during the database operation
-#         error_message = f"Error: {str(e)}"
-#         return jsonify({"message": error_message}), 500
+        # Update the question in the database with the question_id
+        await update_question_db(question_id, new_question)
+        # Return a 200 OK response if the operation succeeds
+        return jsonify({"message": "Question updated successfully"}), 200
+    except Exception as e:
+        # Handle any exceptions that might occur during the database operation
+        error_message = f"Error: {str(e)}"
+        return jsonify({"message": error_message}), 500
     
-# # Define a route to delete a question from the database
-# @app.route('/questions/delete/<question_id>', methods=['DELETE'])
-# def delete_question(question_id):
-#     try:
-#         # Delete the question from the database with the question_id
-#         delete_question_db(question_id)
-#         # Return a 200 OK response if the operation succeeds
-#         return jsonify({"message": "Question deleted successfully"}), 200
-#     except Exception as e:
-#         # Handle any exceptions that might occur during the database operation
-#         error_message = f"Error: {str(e)}"
-#         return jsonify({"message": error_message}), 500
+# Define a route to delete a question from the database
+@app.route('/questions/delete/<question_id>', methods=['DELETE'])
+async def delete_question(question_id):
+    try:
+        # Delete the question from the database with the question_id
+        await delete_question_db(question_id)
+        # Return a 200 OK response if the operation succeeds
+        return jsonify({"message": "Question deleted successfully"}), 200
+    except Exception as e:
+        # Handle any exceptions that might occur during the database operation
+        error_message = f"Error: {str(e)}"
+        return jsonify({"message": error_message}), 500
 
-# import csc.routes
-
-# # check if database is accessible
-# @app.route('/csc/check_database', methods=['GET'])
-# async def ping_db():
-#     # Example route that interacts with MongoDB
-#     collection = app.db["Questions"]
-    
-#     # Insert a document into the collection
-#     await collection.insert_one({"question": "John Doe"})
-    
-#     # Retrieve a document from the collection
-#     document = await collection.find_one({"question": "John Doe"})
-    
-#     return f"Hello, {document['question']}!"
+import csc.routes
 
 app.run(port=8080, debug=True)

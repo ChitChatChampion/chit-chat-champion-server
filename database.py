@@ -57,14 +57,14 @@ async def add_question_db(question):
     })
     return str(inserted_qn.inserted_id)
 
-# def update_question_db(question_id, new_question):
-#     questions_collection.update_one({'_id': ObjectId(question_id)}, {
-#         '$set': {
-#             'content': new_question.content
-#         }
-#     })
-#     return str(question_id)
+async def update_question_db(question_id, new_question):
+    questions_collection.update_one({'_id': ObjectId(question_id)}, {
+        '$set': {
+            'content': new_question.content
+        }
+    })
+    return str(question_id)
 
-# def delete_question_db(question_id):
-#     questions_collection.delete_one({'_id': ObjectId(question_id)})
-#     return str(question_id)
+async def delete_question_db(question_id):
+    questions_collection.delete_one({'_id': ObjectId(question_id)})
+    return str(question_id)

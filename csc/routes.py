@@ -38,15 +38,16 @@ async def query_openai(room_id, messages):
     logging.info(f"{room_id}: Done adding questions to database")
 
 async def add_gpt_questions_to_db(questions):
-    # remove the last comma
-    if questions[-3] == ",":
-        # so that json.loads doesn't throw an error
-        questions = questions[:-3] + "]"
-    if questions[0] != "[":
-        # if there is only one question we make it a list
-        await insert_questions([questions])
-    else:
-        await insert_questions(json.loads(questions))
+    try:
+        if questions[0] != "[":
+            # if there is only one question we make it a list
+            await insert_questions([questions])
+        else:
+            # else convert string of questions to list of questions
+            await insert_questions(json.loads(questions))
+    except Exception as e:
+        logging.error(f"Error: {str(e)}")
+        return jsonify({"message": f"Error: {str(e)}"}), 500
 
 # Creates a CSC room
 @app.route('/room/csc', methods=["POST"])

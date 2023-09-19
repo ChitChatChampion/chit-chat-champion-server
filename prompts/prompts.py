@@ -9,6 +9,6 @@ assistant_example_csc = """
 [
     "What is your favorite programming language?",
     "If you could choose one programming langauge for the rest of your life, what would it be?",
-    "What was your favourite experience in a hackathon like?",
+    "What was your favourite experience in a hackathon like?"
 ]
 """

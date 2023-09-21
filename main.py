@@ -5,6 +5,7 @@ import os
 from quart import Quart, request, jsonify
 from motor.motor_asyncio import AsyncIOMotorClient
 import openai
+import logging
 
 from dotenv import load_dotenv
 from quart import Quart
@@ -34,5 +35,7 @@ def query_records():
 # Import all routes
 import csc.routes
 import csc.questions.routes
+
+logging.basicConfig(level=logging.DEBUG)
 
 app.run(port=8080, debug=True)

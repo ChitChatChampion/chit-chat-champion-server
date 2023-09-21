@@ -47,7 +47,7 @@ async def insert_questions(generated_questions: list):
         await add_question_db(question)
 
 async def add_question_db(question):
-    inserted_qn = await questions_collection.insert_one({
+    inserted_qn = await get_db()["Rooms"].insert_one({
         'content': question
     })
     return inserted_qn

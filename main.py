@@ -8,7 +8,6 @@ import openai
 import logging
 
 from dotenv import load_dotenv
-from quart import Quart
 
 app = Quart(__name__)
 
@@ -39,4 +38,5 @@ import user.routes
 
 logging.basicConfig(level=logging.DEBUG)
 
-app.run(port=8080, debug=True)
+if __name__ == "__main__":
+    app.run(port=8080, debug=True)

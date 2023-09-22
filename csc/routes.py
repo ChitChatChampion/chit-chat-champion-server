@@ -12,20 +12,23 @@ from utils.utils import checkResponseSuccess
 # Get csc context from user whose access token is in response header
 @app.route('/csc/context', methods=["GET"])
 async def get_csc_context():
-    # TODO: check if this works
-    user_info = get_user_info()
-    if not checkResponseSuccess(user_info):
-        return user_info # will contain error and status message
-    user_email = user_info[0].get("email")
-    db = await get_db()
-    user = db["Users"].find_one({"email": user_email})
+    # # TODO: check if this works
+    # user_info = get_user_info()
+    # if not checkResponseSuccess(user_info):
+    #     return user_info # will contain error and status message
+    # user_email = user_info[0].get("email")
+    user_email = "user@example.com"
+    db = get_db()
+    user = await db["Users"].find_one({"_id": user_email})
     # assumes user should have been added to db upon first login
     if not user:
         return {"error": "User not found"}, 404
     return {
         "baseContext": user["baseContext"],
         "cscContext": user["csc"]["cscContext"],
-        "questions": user["csc"]["questions"]
+        "questions": {"questions":
+                        [{"id": id, "content": content} for id,content in user['csc']['questions'].items()]
+                     }
     }, 200
 
 # creates or updates a user's csc (and/or base) context
@@ -121,7 +124,7 @@ async def publish_room():
 
 async def update_room_before_publish(user_email, room_id):
     db = get_db()
-    user = await db["Users"].find_one({"email": user_email})
+    user = await db["Users"].find_one({"_id": user_email})
     if not user:
         return {"error": "User not found"}, 404
     room = await db["Rooms"].find_one({"_id": room_id})

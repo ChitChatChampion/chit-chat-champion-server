@@ -8,3 +8,6 @@ def getBaseContext(baseContext):
 def getCscContext(cscContext):
     number_of_cards = cscContext.get('number_of_cards')
     return number_of_cards
+
+def checkResponseSuccess(response):
+    return response[1] == 200

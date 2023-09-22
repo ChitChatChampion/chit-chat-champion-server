@@ -7,28 +7,25 @@ from database import get_db, insert_questions
 from nanoid import generate
 from utils.utils import getBaseContext, getCscContext
 from user.routes import get_user_info
+from utils.utils import checkResponseSuccess
 
 # Get csc context from user whose access token is in response header
 @app.route('/csc/context', methods=["GET"])
 async def get_csc_context():
-    # user_or_error = await get_user_info()
-    user_or_error = {"email": "user@example.com"}
-    if not user_or_error.get("email"):
-        return user_or_error
-    user_email = user_or_error.get("email")
+    # TODO: check if this works
+    user_info = get_user_info()
+    if not checkResponseSuccess(user_info):
+        return user_info # will contain error and status message
+    user_email = user_info[0].get("email")
     db = await get_db()
     user = db["Users"].find_one({"email": user_email})
     # assumes user should have been added to db upon first login
     if not user:
         return {"error": "User not found"}, 404
-    # find a room where game type is csc and user_id is user's id
-    room = db["Rooms"].find_one({"game_type": "csc", "user_id": user["_id"]})
-    if not room:
-        return {"error": "Csc room for user not found"}, 404
     return {
         "baseContext": user["baseContext"],
-        "cscContext": room["cscContext"],
-        "questions": room["questions"]
+        "cscContext": user["csc"]["cscContext"],
+        "questions": user["csc"]["questions"]
     }, 200
 
 # creates or updates a user's csc (and/or base) context
@@ -37,9 +34,11 @@ async def save_csc_context():
     request_json = await request.json
     purpose, relationship, description = getBaseContext(request_json.get('baseContext'))
     numberOfCards = getCscContext(request_json.get('cscContext')).get('numberOfCards')
-    # TODO: check header access token, get user email
-    # user_email = get_user_info().get('email')
-    user_email = "user@example.com"
+    # TODO: check if this works
+    user_info = get_user_info()
+    if not checkResponseSuccess(user_info):
+        return user_info # will contain error and status message
+    user_email = user_info[0].get("email")
 
     user = await get_db()["Users"].find_one({"_id": user_email})
     if not user:
@@ -52,8 +51,10 @@ async def save_csc_context():
                                             'relationship': relationship,
                                             'description': description
                                         },
-                                        'cscContext': {
-                                            'numberOfCards': numberOfCards
+                                        'csc': {
+                                            'cscContext': {
+                                                'numberOfCards': numberOfCards
+                                            }
                                         }
                                     }}, upsert=True
                                 )

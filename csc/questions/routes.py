@@ -9,6 +9,7 @@ from main import MODEL
 import prompts.prompts as prompts
 from database import check_db, get_all_questions, add_question_db, get_db, update_question_db, delete_question_db
 from user.routes import get_user_info
+from utils.utils import checkResponseSuccess
 
 async def openai_generate_qns_add_db(room_id, messages):
     logging.info("{room_id}: Querying OpenAI")
@@ -93,41 +94,72 @@ async def check_database():
 
 @app.route('/csc/questions', methods=['GET'])
 async def get_csc_questions():
-    # TODO: properly authenticate
-    # user_email = await get_user_info()
-    user_email = "user@example.com"
-    if not user_email:
-        return jsonify({"error": "Invalid user"}), 401
-    room = await get_db()['Rooms'].find_one({"user_id": user_email})
-    if not room:
-        return jsonify({"error": "Room not found"}), 404
-    questions = room['questions']
-    if not questions:
-        return {"questions": {}}
+    # TODO: check if this works
+    user_info = await get_user_info()
+    if not checkResponseSuccess(user_info):
+        return user_info # will contain error and status message
 
-    return jsonify(questions), 200
-    
+    user_email = user_info[0].get("email")
+    user = await get_db()['Users'].find_one({"_id": user_email})
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    questions = user['csc']['questions']
+    if not questions:
+        return {"questions": []}, 200
+    return {"questions": [{"id": id, "content": content} for id, content in questions.items()]}, 200
+
 
 @app.route('/csc/questions/<id>', methods=['PUT'])
 async def update_csc_question(id):
     request_data = await request.json
     content = request_data.get('content')
 
-    # TODO: properly authenticate
-    user_email = await get_user_info()
+    # TODO: check if this works
+    user_info = get_user_info()
+    if not checkResponseSuccess(user_info):
+        return user_info # will contain error and status message
+    user_email = user_info[0].get("email")
+
     if not user_email:
         return jsonify({"error": "Invalid user"}), 401
 
     if not content:
         return jsonify({"error": "No content data"}), 400
-    
+
     try:
-        room = await get_db()['Rooms'].find_one({"user_id": user_email})
-        if not room:
-            return jsonify({"error": "Room not found"}), 404
-        questions = room['questions']
+        user = await get_db()['Users'].find_one({"_id": user_email})
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+        questions = user['csc']['questions']
         questions[id] = content
-        await get_db()['Rooms'].update_one({"user_id": user_email}, {'$set': {'questions': questions}})
+        await get_db()['Users'].update_one({"_id": user_email},
+                                           {'$set': {'csc.questions': questions}})
+
+        return jsonify({"id": id}), 200
+    except Exception as e:
+        error_message = f"Error: {str(e)}"
+        return jsonify({"message": error_message}), 500
+
+@app.route('/csc/questions/create', methods=['POST'])
+async def create_csc_question():
+    # get all questions from user from db
+    user_email = "user@example.com"
+    # TODO: check if this works
+    user_info = get_user_info()
+    if not checkResponseSuccess(user_info):
+        return user_info # will contain error and status message
+    user_email = user_info[0].get("email")
+    try:
+        user = await get_db()['Users'].find_one({"_id": user_email})
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+        questions = user['csc']['questions']
+        while True:
+            
+            if id not in questions:
+                break
+        await get_db()['Users'].update_one({"_id": user_email},
+                                           {'$set': {'csc.questions': questions}})
 
         return jsonify({"id": id}), 200
     except Exception as e:
@@ -136,19 +168,19 @@ async def update_csc_question(id):
 
 @app.route('/csc/questions/<id>', methods=['DELETE'])
 async def delete_csc_question(id):
-    request_data = await request.json
-    # TODO: properly authenticate
-    user_email = await get_user_info()
-    if not user_email:
-        return jsonify({"error": "Invalid user"}), 401
-    
+    # TODO: check if this works
+    user_info = get_user_info()
+    if not checkResponseSuccess(user_info):
+        return user_info # will contain error and status message
+    user_email = user_info[0].get("email")
+
     try:
-        room = await get_db()['Rooms'].find_one({"user_id": user_email})
-        if not room:
-            return jsonify({"error": "Room not found"}), 404
-        questions = room['questions']
+        user = await get_db()['Users'].find_one({"_id": user_email})
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+        questions = user['csc']['questions']
         del questions[id]
-        await get_db()['Rooms'].update_one({"user_id": user_email}, {'$set': {'questions': questions}})
+        await get_db()['Users'].update_one({"_id": user_email}, {'$set': {'csc.questions': questions}})
 
         return jsonify({"id": id}), 200
     except Exception as e:

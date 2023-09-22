@@ -24,7 +24,6 @@ app.config['MONGODB_URI'] = os.getenv("MONGODB_URI")
 async def setup_mongodb():
     app.db = AsyncIOMotorClient(app.config['MONGODB_URI']).get_database("ChitChatChampions")
 
-
 @app.route('/', methods=['GET'])
 def query_records():
     return {"message": "Hello World!"}
@@ -36,4 +35,5 @@ import user.routes
 
 logging.basicConfig(level=logging.DEBUG)
 
-app.run(port=8080, debug=True)
+if __name__ == "__main__":
+    app.run(port=8080, debug=True)

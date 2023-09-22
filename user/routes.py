@@ -44,7 +44,7 @@ def get_user_info():
             user_info = response.json()
             name = user_info.get("name")
             email = user_info.get("email")
-            return {"status": "success", "name": name, "email": email}
+            return {"status": "success", "name": name, "email": email}, response.status_code
         else:
             return jsonify({"error": "Failed to fetch user info"}), response.status_code
     except Exception as e:

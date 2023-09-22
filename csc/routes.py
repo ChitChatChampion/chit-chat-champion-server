@@ -6,6 +6,32 @@ from ast import literal_eval
 from database import get_db, insert_questions
 from nanoid import generate
 from utils.utils import getBaseContext, getCscContext
+from user.routes import get_user_info
+
+# Get csc context from user whose access token is in response header
+@app.route('/csc/context', methods=["GET"])
+async def get_csc_context():
+    # user_or_error = await get_user_info()
+    user_or_error = {"email": "user@example.com"}
+    if not user_or_error.get("email"):
+        return user_or_error
+    user_email = user_or_error.get("email")
+    db = get_db()
+    user = db["Users"].find_one({"email": user_email})
+    # assumes user should have been added to db upon first login
+    if not user:
+        return {"error": "User not found"}, 404
+    # find a room where game type is csc and user_id is user's id
+    room = db["Rooms"].find_one({"game_type": "csc", "user_id": user["_id"]})
+    if not room:
+        return {"error": "Csc room for user not found"}, 404
+    return {
+        "baseContext": user["baseContext"],
+        "cscContext": room["cscContext"],
+        "questions": room["questions"]
+    }, 200
+
+
 
 # Creates a CSC room
 @app.route('/room/csc', methods=["POST"])

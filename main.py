@@ -14,7 +14,9 @@ app = Quart(__name__)
 
 MODEL = "gpt-3.5-turbo"
 
-# Configure database
+load_dotenv()
+
+openai.api_key = os.getenv("OPENAI_KEY")
 app.config['MONGODB_URI'] = os.getenv("MONGODB_URI")
 
 # Create an AsyncIOMotorClient within the app context
@@ -22,9 +24,6 @@ app.config['MONGODB_URI'] = os.getenv("MONGODB_URI")
 async def setup_mongodb():
     app.db = AsyncIOMotorClient(app.config['MONGODB_URI']).get_database("ChitChatChampions")
 
-load_dotenv()
-
-openai.api_key = os.getenv("OPENAI_KEY")
 
 @app.route('/', methods=['GET'])
 def query_records():

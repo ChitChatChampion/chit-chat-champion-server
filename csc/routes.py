@@ -31,6 +31,33 @@ async def get_csc_context():
         "questions": room["questions"]
     }, 200
 
+# creates or updates a user's csc (and/or base) context
+@app.route('/csc/context', methods=["POST"])
+async def save_csc_context():
+    request_json = await request.json
+    purpose, relationship, description = getBaseContext(request_json.get('baseContext'))
+    numberOfCards = getCscContext(request_json.get('cscContext')).get('numberOfCards')
+    # TODO: check header access token, get user email
+    # user_email = get_user_info().get('email')
+    user_email = "user@example.com"
+
+    user = get_db()["Users"].find_one({"_id": user_email})
+    if not user:
+        return {"message": "User not found"}, 404
+
+    get_db()["Users"].update_one({"_id": user_email},
+                                    {'$set': {
+                                        'baseContext': {
+                                            'purpose': purpose,
+                                            'relationship': relationship,
+                                            'description': description
+                                        },
+                                        'cscContext': {
+                                            'numberOfCards': numberOfCards
+                                        }
+                                    }}, upsert=True
+                                )
+    return {"message": "success"}
 
 
 # Creates a CSC room

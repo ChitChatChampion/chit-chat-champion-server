@@ -143,29 +143,37 @@ async def update_csc_question(id):
 
 @app.route('/csc/questions/create', methods=['POST'])
 async def create_csc_question():
-    # get all questions from user from db
-    user_email = "user@example.com"
     # TODO: check if this works
     user_info = get_user_info()
     if not checkResponseSuccess(user_info):
         return user_info # will contain error and status message
     user_email = user_info[0].get("email")
+
     try:
         user = await get_db()['Users'].find_one({"_id": user_email})
         if not user:
             return jsonify({"error": "User not found"}), 404
         questions = user['csc']['questions']
-        while True:
-            
-            if id not in questions:
-                break
+        # generate empty new question
+        question_id = generate_unique_question_id(questions)
+        questions[question_id] = ""
         await get_db()['Users'].update_one({"_id": user_email},
                                            {'$set': {'csc.questions': questions}})
 
-        return jsonify({"id": id}), 200
+        return jsonify({"id": question_id}), 200
     except Exception as e:
         error_message = f"Error: {str(e)}"
         return jsonify({"message": error_message}), 500
+
+def generate_unique_question_id(questions):
+    question_id = generate(size=3)
+    if not questions:
+        return question_id
+    while True:
+        if question_id not in questions.keys():
+            break
+        question_id = generate(size=3)
+    return question_id
 
 @app.route('/csc/questions/<id>', methods=['DELETE'])
 async def delete_csc_question(id):

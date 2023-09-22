@@ -103,8 +103,8 @@ async def get_csc_questions():
         return jsonify({"error": "Room not found"}), 404
     questions = room['questions']
     if not questions:
-        return {"questions": []}
-    # TODO: properly format questions to return
+        return {"questions": {}}
+
     return jsonify(questions), 200
     
 

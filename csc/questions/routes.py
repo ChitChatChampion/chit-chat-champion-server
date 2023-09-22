@@ -100,6 +100,7 @@ async def get_csc_questions():
         return user_info # will contain error and status message
 
     user_email = user_info[0].get("email")
+
     user = await get_db()['Users'].find_one({"_id": user_email})
     if not user:
         return jsonify({"error": "User not found"}), 404

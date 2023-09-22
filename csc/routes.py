@@ -62,7 +62,7 @@ async def save_csc_context():
 
 
 # Creates a CSC room
-@app.route('/room/csc', methods=["POST"])
+@app.route('/room/csc/create', methods=["POST"])
 async def create_csc_room():
     request_json = await request.json
     age, familiarity, purpose, group_description = getBaseContext(request_json.get('baseContext'))
@@ -96,6 +96,8 @@ async def create_csc_room():
 async def get_room(room_id):
     room = await get_db()["Rooms"].find_one({"_id": room_id})
     if room:
+        # TODO: check when this is called. As of now it will not return
+        # updated questions since we only update questions in Users collection
         return {"game_type": room["game_type"], "questions": room["questions"]}
     else:
         return {"error": "Room not found"}, 404
@@ -105,8 +107,37 @@ async def get_room(room_id):
 async def publish_room():
     request_json = await request.json
     room_id = request_json.get('room_id')
+    # TODO: update room with user's questions
+    user_info = get_user_info()
+    if not checkResponseSuccess(user_info):
+        return user_info
+    user_email = user_info[0].get("email")
+
+    updated_result = await update_room_before_publish(user_email, room_id)
+    if not checkResponseSuccess(updated_result):
+        return updated_result
 
     return await set_room_published_status(room_id, True)
+
+async def update_room_before_publish(user_email, room_id):
+    db = get_db()
+    user = await db["Users"].find_one({"email": user_email})
+    if not user:
+        return {"error": "User not found"}, 404
+    room = await db["Rooms"].find_one({"_id": room_id})
+    if not room:
+        return {"error": "Room not found"}, 404
+
+    if room['game_type'] == 'csc':
+        questions = user["csc"]["questions"]
+        await db["Rooms"].update_one({"_id": room_id}, {'$set': {'questions': questions}})
+        return {"message": "success"}, 200
+    elif room['game_type'] == 'bb':
+        questions = user["bb"]["questions"]
+        await db["Rooms"].update_one({"_id": room_id}, {'$set': {'questions': questions}})
+        return {"message": "success"}, 200
+    else:
+        return {"error": "Room has invalid game_type"}, 400
 
 # unpublish room
 @app.route('/unpublish/room', methods=["POST"])

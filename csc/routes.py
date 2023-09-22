@@ -7,7 +7,7 @@ from database import get_db, insert_questions
 from nanoid import generate
 from utils.utils import getBaseContext, getCscContext
 from user.routes import get_user_info
-from utils.utils import checkResponseSuccess
+from utils.utils import checkResponseSuccess, prettify_questions
 
 # Get csc context from user whose access token is in response header
 @app.route('/csc/context', methods=["GET"])
@@ -26,9 +26,7 @@ async def get_csc_context():
     return {
         "baseContext": user["baseContext"],
         "cscContext": user["csc"]["cscContext"],
-        "questions": {"questions":
-                        [{"id": id, "content": content} for id,content in user['csc']['questions'].items()]
-                     }
+        "questions": prettify_questions(user["csc"]["questions"])
     }, 200
 
 # creates or updates a user's csc (and/or base) context

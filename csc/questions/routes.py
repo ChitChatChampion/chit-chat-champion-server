@@ -9,7 +9,7 @@ from main import MODEL
 import prompts.prompts as prompts
 from database import check_db, get_all_questions, add_question_db, get_db, update_question_db, delete_question_db
 from user.routes import get_user_info
-from utils.utils import checkResponseSuccess
+from utils.utils import checkResponseSuccess, prettify_questions
 
 async def openai_generate_qns_add_db(room_id, messages):
     logging.info("{room_id}: Querying OpenAI")
@@ -107,7 +107,7 @@ async def get_csc_questions():
     questions = user['csc']['questions']
     if not questions:
         return {"questions": []}, 200
-    return {"questions": [{"id": id, "content": content} for id, content in questions.items()]}, 200
+    return prettify_questions(questions), 200
 
 
 @app.route('/csc/questions/<id>', methods=['PUT'])

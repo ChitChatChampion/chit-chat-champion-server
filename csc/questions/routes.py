@@ -1,5 +1,6 @@
 from __main__ import app
 from ast import literal_eval
+import json
 import logging
 from nanoid import generate
 import openai
@@ -93,11 +94,11 @@ async def check_database():
 @app.route('/csc/questions', methods=['GET'])
 async def get_csc_questions():
     # TODO: properly authenticate
-    user_email = await get_user_info()
+    # user_email = await get_user_info()
+    user_email = "user@example.com"
     if not user_email:
         return jsonify({"error": "Invalid user"}), 401
-    # get room belonging to the user
-    room = get_db()['Rooms'].find_one({"user_id": user_email})
+    room = await get_db()['Rooms'].find_one({"user_id": user_email})
     if not room:
         return jsonify({"error": "Room not found"}), 404
     questions = room['questions']
@@ -121,12 +122,12 @@ async def update_csc_question(id):
         return jsonify({"error": "No content data"}), 400
     
     try:
-        room = get_db()['Rooms'].find_one({"user_id": user_email})
+        room = await get_db()['Rooms'].find_one({"user_id": user_email})
         if not room:
             return jsonify({"error": "Room not found"}), 404
         questions = room['questions']
         questions[id] = content
-        get_db()['Rooms'].update_one({"user_id": user_email}, {'$set': {'questions': questions}})
+        await get_db()['Rooms'].update_one({"user_id": user_email}, {'$set': {'questions': questions}})
 
         return jsonify({"id": id}), 200
     except Exception as e:
@@ -142,12 +143,12 @@ async def delete_csc_question(id):
         return jsonify({"error": "Invalid user"}), 401
     
     try:
-        room = get_db()['Rooms'].find_one({"user_id": user_email})
+        room = await get_db()['Rooms'].find_one({"user_id": user_email})
         if not room:
             return jsonify({"error": "Room not found"}), 404
         questions = room['questions']
         del questions[id]
-        get_db()['Rooms'].update_one({"user_id": user_email}, {'$set': {'questions': questions}})
+        await get_db()['Rooms'].update_one({"user_id": user_email}, {'$set': {'questions': questions}})
 
         return jsonify({"id": id}), 200
     except Exception as e:

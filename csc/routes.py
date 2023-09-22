@@ -16,7 +16,7 @@ async def get_csc_context():
     if not user_or_error.get("email"):
         return user_or_error
     user_email = user_or_error.get("email")
-    db = get_db()
+    db = await get_db()
     user = db["Users"].find_one({"email": user_email})
     # assumes user should have been added to db upon first login
     if not user:
@@ -41,11 +41,11 @@ async def save_csc_context():
     # user_email = get_user_info().get('email')
     user_email = "user@example.com"
 
-    user = get_db()["Users"].find_one({"_id": user_email})
+    user = await get_db()["Users"].find_one({"_id": user_email})
     if not user:
         return {"message": "User not found"}, 404
 
-    get_db()["Users"].update_one({"_id": user_email},
+    await get_db()["Users"].update_one({"_id": user_email},
                                     {'$set': {
                                         'baseContext': {
                                             'purpose': purpose,
@@ -92,8 +92,8 @@ async def create_csc_room():
 # 	game_type: "csc",
 # }
 @app.route('/room/<room_id>', methods=["GET"])
-def get_room(room_id):
-    room = get_db()["Rooms"].find_one({"_id": room_id})
+async def get_room(room_id):
+    room = await get_db()["Rooms"].find_one({"_id": room_id})
     if room:
         return {"game_type": room["game_type"], "questions": room["questions"]}
     else:

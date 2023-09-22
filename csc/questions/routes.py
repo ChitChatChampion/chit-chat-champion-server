@@ -7,6 +7,7 @@ from quart import request, jsonify
 from main import MODEL
 import prompts.prompts as prompts
 from database import check_db, get_all_questions, add_question_db, get_db, update_question_db, delete_question_db
+from user.routes import get_user_info
 
 async def openai_generate_qns_add_db(room_id, messages):
     logging.info("{room_id}: Querying OpenAI")
@@ -89,58 +90,66 @@ async def check_database():
     res = await check_db()
     return res
 
-# Define a route to get all the questions in the database
-@app.route('/questions', methods=['GET'])
-async def get_questions():
-    res = await get_all_questions()
-    return res
-
-# Define a route to add a question to the database
-@app.route('/questions/add', methods=['POST'])
-async def add_question():
-    try:
-        # Get the question from the request body
-        # e.g. for testing: {"question": "What is your favorite programming language?"}
-        question_data = await request.json
-        question = question_data.get('question')
-
-        # Insert the question into the database
-        await add_question_db(question)
-
-        # Return a 200 OK response if the operation succeeds
-        return jsonify({"message": "Question added successfully"}), 200
-    except Exception as e:
-        # Handle any exceptions that might occur during the database operation
-        error_message = f"Error: {str(e)}"
-        return jsonify({"message": error_message}), 500
-
-# Define a route to update a question in the database
-@app.route('/questions/update/<question_id>', methods=['PUT'])
-async def update_question(question_id):
-    try:
-        # Get the question from the request body
-        # e.g. for testing: {"question": "What is your favorite programming language?"}
-        question_data = await request.json
-        new_question = question_data.get('question')
-
-        # Update the question in the database with the question_id
-        await update_question_db(question_id, new_question)
-        # Return a 200 OK response if the operation succeeds
-        return jsonify({"message": "Question updated successfully"}), 200
-    except Exception as e:
-        # Handle any exceptions that might occur during the database operation
-        error_message = f"Error: {str(e)}"
-        return jsonify({"message": error_message}), 500
+@app.route('/csc/questions', methods=['GET'])
+async def get_csc_questions():
+    # TODO: properly authenticate
+    user_email = await get_user_info()
+    if not user_email:
+        return jsonify({"error": "Invalid user"}), 401
+    # get room belonging to the user
+    room = get_db()['Rooms'].find_one({"user_id": user_email})
+    if not room:
+        return jsonify({"error": "Room not found"}), 404
+    questions = room['questions']
+    if not questions:
+        return {"questions": []}
+    # TODO: properly format questions to return
+    return jsonify(questions), 200
     
-# Define a route to delete a question from the database
-@app.route('/questions/delete/<question_id>', methods=['DELETE'])
-async def delete_question(question_id):
+
+@app.route('/csc/questions/<id>', methods=['PUT'])
+async def update_csc_question(id):
+    request_data = await request.json
+    content = request_data.get('content')
+
+    # TODO: properly authenticate
+    user_email = await get_user_info()
+    if not user_email:
+        return jsonify({"error": "Invalid user"}), 401
+
+    if not content:
+        return jsonify({"error": "No content data"}), 400
+    
     try:
-        # Delete the question from the database with the question_id
-        await delete_question_db(question_id)
-        # Return a 200 OK response if the operation succeeds
-        return jsonify({"message": "Question deleted successfully"}), 200
+        room = get_db()['Rooms'].find_one({"user_id": user_email})
+        if not room:
+            return jsonify({"error": "Room not found"}), 404
+        questions = room['questions']
+        questions[id] = content
+        get_db()['Rooms'].update_one({"user_id": user_email}, {'$set': {'questions': questions}})
+
+        return jsonify({"id": id}), 200
     except Exception as e:
-        # Handle any exceptions that might occur during the database operation
+        error_message = f"Error: {str(e)}"
+        return jsonify({"message": error_message}), 500
+
+@app.route('/csc/questions/<id>', methods=['DELETE'])
+async def delete_csc_question(id):
+    request_data = await request.json
+    # TODO: properly authenticate
+    user_email = await get_user_info()
+    if not user_email:
+        return jsonify({"error": "Invalid user"}), 401
+    
+    try:
+        room = get_db()['Rooms'].find_one({"user_id": user_email})
+        if not room:
+            return jsonify({"error": "Room not found"}), 404
+        questions = room['questions']
+        del questions[id]
+        get_db()['Rooms'].update_one({"user_id": user_email}, {'$set': {'questions': questions}})
+
+        return jsonify({"id": id}), 200
+    except Exception as e:
         error_message = f"Error: {str(e)}"
         return jsonify({"message": error_message}), 500

@@ -32,6 +32,7 @@ def query_records():
 # Import all routes
 import csc.routes
 import csc.questions.routes
+import user.routes
 
 logging.basicConfig(level=logging.DEBUG)
 

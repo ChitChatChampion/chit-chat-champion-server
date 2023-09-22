@@ -1,53 +1,11 @@
 from __main__ import app, MODEL
 from quart import request, jsonify
+from csc.questions.routes import generate_unique_room_id, openai_generate_qns_add_db, set_room_published_status
 import prompts.prompts as prompts
-import asyncio
-import json
-import logging
-import openai
-from database import insert_questions
+from ast import literal_eval
+from database import get_db, insert_questions
 from nanoid import generate
 from utils.utils import getBaseContext, getCscContext
-
-async def background_task():
-    # sleep for 2 seconds
-    await asyncio.sleep(2)
-    print("Hello")
-
-@app.route('/hello', methods=['GET'])
-async def hello():
-    app.add_background_task(background_task)
-    return 'hello'
-
-async def query_openai(room_id, messages):
-    logging.info("{room_id}: Querying OpenAI")
-    response = openai.ChatCompletion.create(
-        model=MODEL,
-        messages=messages,
-        temperature=0.7,
-    )
-    questions = response['choices'][0]['message']['content']
-
-    logging.info(f"{room_id}: Response obtained from OpenAI: {questions}")
-
-    # add questions in the form of room-id to questions key value pairs
-    logging.info(f"{room_id}: Adding questions to database")
-    
-    await add_gpt_questions_to_db(questions)
-
-    logging.info(f"{room_id}: Done adding questions to database")
-
-async def add_gpt_questions_to_db(questions):
-    try:
-        if questions[0] != "[":
-            # if there is only one question we make it a list
-            await insert_questions([questions])
-        else:
-            # else convert string of questions to list of questions
-            await insert_questions(json.loads(questions))
-    except Exception as e:
-        logging.error(f"Error: {str(e)}")
-        return jsonify({"message": f"Error: {str(e)}"}), 500
 
 # Creates a CSC room
 @app.route('/room/csc', methods=["POST"])
@@ -68,9 +26,38 @@ async def create_csc_room():
         {"role": "user", "content": prompt}
     ]
 
-    # TODO: check for collisions in room id
-    room_id = generate(size=6)
+    room_id = await generate_unique_room_id()
 
-    await query_openai(room_id, messages)
+    app.add_background_task(openai_generate_qns_add_db, room_id, messages)
 
-    return {room_id: room_id}
+    return {"room_id": room_id}
+
+# GET
+# /room/:id
+# Returns:
+# {
+# 	game_type: "csc",
+# }
+@app.route('/room/<room_id>', methods=["GET"])
+def get_room(room_id):
+    room = get_db()["Rooms"].find_one({"_id": room_id})
+    if room:
+        return {"game_type": room["game_type"], "questions": room["questions"]}
+    else:
+        return {"error": "Room not found"}, 404
+
+# create room: POST /publish/room/, return success/failure
+@app.route('/publish/room', methods=["POST"])
+async def publish_room():
+    request_json = await request.json
+    room_id = request_json.get('room_id')
+
+    return await set_room_published_status(room_id, True)
+
+# unpublish room
+@app.route('/unpublish/room', methods=["POST"])
+async def unpublish_room():
+    request_json = await request.json
+    room_id = request_json.get('room_id')
+
+    return await set_room_published_status(room_id, False)

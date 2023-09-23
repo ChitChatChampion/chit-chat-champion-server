@@ -40,8 +40,5 @@ app.register_blueprint(room_bp)
 
 logging.basicConfig(level=logging.DEBUG)
 
-# Define the 'application' attribute for Gunicorn
-application = app
-
 if __name__ == "__main__":
     app.run(port=8080, debug=True)

@@ -6,7 +6,7 @@ from bson import ObjectId
 
 def get_db():
     if not hasattr(current_app, 'db'):
-        current_app.db = AsyncIOMotorClient(current_app.config['MONGO_URI']).get_database("ChitChatChampions")
+        current_app.db = AsyncIOMotorClient(current_app.config['MONGODB_URI']).get_database("ChitChatChampions")
     return current_app.db
 
 def get_questions_collection():

@@ -1,5 +1,6 @@
 from __main__ import app
 from ast import literal_eval
+import json
 import logging
 from nanoid import generate
 import openai
@@ -7,6 +8,8 @@ from quart import request, jsonify
 from main import MODEL
 import prompts.prompts as prompts
 from database import check_db, get_all_questions, add_question_db, get_db, update_question_db, delete_question_db
+from user.routes import get_user_info
+from utils.utils import checkResponseSuccess, prettify_questions
 
 async def openai_generate_qns_add_db(room_id, messages):
     logging.info("{room_id}: Querying OpenAI")
@@ -89,58 +92,106 @@ async def check_database():
     res = await check_db()
     return res
 
-# Define a route to get all the questions in the database
-@app.route('/questions', methods=['GET'])
-async def get_questions():
-    res = await get_all_questions()
-    return res
+@app.route('/csc/questions', methods=['GET'])
+async def get_csc_questions():
+    # TODO: check if this works
+    user_info = await get_user_info()
+    if not checkResponseSuccess(user_info):
+        return user_info # will contain error and status message
 
-# Define a route to add a question to the database
-@app.route('/questions/add', methods=['POST'])
-async def add_question():
+    user_email = user_info[0].get("email")
+
+    user = await get_db()['Users'].find_one({"_id": user_email})
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    questions = user['csc']['questions']
+    if not questions:
+        return {"questions": []}, 200
+    return prettify_questions(questions), 200
+
+
+@app.route('/csc/questions/<id>', methods=['PUT'])
+async def update_csc_question(id):
+    request_data = await request.json
+    content = request_data.get('content')
+
+    # TODO: check if this works
+    user_info = get_user_info()
+    if not checkResponseSuccess(user_info):
+        return user_info # will contain error and status message
+    user_email = user_info[0].get("email")
+
+    if not user_email:
+        return jsonify({"error": "Invalid user"}), 401
+
+    if not content:
+        return jsonify({"error": "No content data"}), 400
+
     try:
-        # Get the question from the request body
-        # e.g. for testing: {"question": "What is your favorite programming language?"}
-        question_data = await request.json
-        question = question_data.get('question')
+        user = await get_db()['Users'].find_one({"_id": user_email})
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+        questions = user['csc']['questions']
+        questions[id] = content
+        await get_db()['Users'].update_one({"_id": user_email},
+                                           {'$set': {'csc.questions': questions}})
 
-        # Insert the question into the database
-        await add_question_db(question)
-
-        # Return a 200 OK response if the operation succeeds
-        return jsonify({"message": "Question added successfully"}), 200
+        return jsonify({"id": id}), 200
     except Exception as e:
-        # Handle any exceptions that might occur during the database operation
         error_message = f"Error: {str(e)}"
         return jsonify({"message": error_message}), 500
 
-# Define a route to update a question in the database
-@app.route('/questions/update/<question_id>', methods=['PUT'])
-async def update_question(question_id):
-    try:
-        # Get the question from the request body
-        # e.g. for testing: {"question": "What is your favorite programming language?"}
-        question_data = await request.json
-        new_question = question_data.get('question')
+@app.route('/csc/questions/create', methods=['POST'])
+async def create_csc_question():
+    # TODO: check if this works
+    user_info = get_user_info()
+    if not checkResponseSuccess(user_info):
+        return user_info # will contain error and status message
+    user_email = user_info[0].get("email")
 
-        # Update the question in the database with the question_id
-        await update_question_db(question_id, new_question)
-        # Return a 200 OK response if the operation succeeds
-        return jsonify({"message": "Question updated successfully"}), 200
+    try:
+        user = await get_db()['Users'].find_one({"_id": user_email})
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+        questions = user['csc']['questions']
+        # generate empty new question
+        question_id = generate_unique_question_id(questions)
+        questions[question_id] = ""
+        await get_db()['Users'].update_one({"_id": user_email},
+                                           {'$set': {'csc.questions': questions}})
+
+        return jsonify({"id": question_id}), 200
     except Exception as e:
-        # Handle any exceptions that might occur during the database operation
         error_message = f"Error: {str(e)}"
         return jsonify({"message": error_message}), 500
-    
-# Define a route to delete a question from the database
-@app.route('/questions/delete/<question_id>', methods=['DELETE'])
-async def delete_question(question_id):
+
+def generate_unique_question_id(questions):
+    question_id = generate(size=3)
+    if not questions:
+        return question_id
+    while True:
+        if question_id not in questions.keys():
+            break
+        question_id = generate(size=3)
+    return question_id
+
+@app.route('/csc/questions/<id>', methods=['DELETE'])
+async def delete_csc_question(id):
+    # TODO: check if this works
+    user_info = get_user_info()
+    if not checkResponseSuccess(user_info):
+        return user_info # will contain error and status message
+    user_email = user_info[0].get("email")
+
     try:
-        # Delete the question from the database with the question_id
-        await delete_question_db(question_id)
-        # Return a 200 OK response if the operation succeeds
-        return jsonify({"message": "Question deleted successfully"}), 200
+        user = await get_db()['Users'].find_one({"_id": user_email})
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+        questions = user['csc']['questions']
+        del questions[id]
+        await get_db()['Users'].update_one({"_id": user_email}, {'$set': {'csc.questions': questions}})
+
+        return jsonify({"id": id}), 200
     except Exception as e:
-        # Handle any exceptions that might occur during the database operation
         error_message = f"Error: {str(e)}"
         return jsonify({"message": error_message}), 500

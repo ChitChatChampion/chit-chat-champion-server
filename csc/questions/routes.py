@@ -26,30 +26,15 @@ async def openai_generate_qns_add_db(room_id, messages):
     question_arr = parse_questions(questions)
     
     await add_questions_to_room_collection(question_arr, room_id, "csc")
-    await add_questions_to_user_collection(question_arr, room_id, "csc")
 
     logging.info(f"{room_id}: Done adding questions to database")
 
 def parse_questions(questions):
     if questions[0] == "[" and questions[-1] == "]":
+        # This may be dangerous in the case of prompt injection
         return literal_eval(questions)
     else:
         return [questions]
-
-async def add_questions_to_user_collection(questions, room_id, game_type):
-    # TODO: do get_user_info
-    print("not done")
-    # email = await get_user_info()
-    # await get_db()["Users"].update_one({"_id": email},
-    #                                        {'$set': {
-    #                                         '_id': email,
-    #                                         'csc': {
-    #                                             'room_id': room_id,
-    #                                             'is_published': False,
-    #                                             'questions': questions
-    #                                         }
-    #                                        }}, upsert=True
-    #                                 )
 
 async def add_questions_to_room_collection(questions, room_id, game_type):
     try:
@@ -95,7 +80,7 @@ async def check_database():
 @app.route('/csc/questions', methods=['GET'])
 async def get_csc_questions():
     # TODO: check if this works
-    user_info = await get_user_info()
+    user_info = get_user_info()
     if not checkResponseSuccess(user_info):
         return user_info # will contain error and status message
 

@@ -1,11 +1,14 @@
 #!/usr/bin/env python
 # encoding: utf-8
-import configparser
 import os
-from quart import Quart, request, jsonify
+from quart import Quart
 from motor.motor_asyncio import AsyncIOMotorClient
 import openai
 import logging
+from csc.questions.routes import csc_questions_bp
+from user.routes import user_bp
+from csc.routes import csc_bp
+from room.routes import room_bp
 
 from dotenv import load_dotenv
 
@@ -17,6 +20,7 @@ load_dotenv()
 
 openai.api_key = os.getenv("OPENAI_KEY")
 app.config['MONGODB_URI'] = os.getenv("MONGODB_URI")
+app.config['MODEL'] = MODEL
 
 # Create an AsyncIOMotorClient within the app context
 @app.before_serving
@@ -27,10 +31,12 @@ async def setup_mongodb():
 def query_records():
     return {"message": "Hello World!"}
 
-# Import all routes
-import csc.routes
-import csc.questions.routes
-import user.routes
+# Register all blueprints
+app.register_blueprint(csc_questions_bp)
+app.register_blueprint(user_bp)
+app.register_blueprint(csc_bp)
+app.register_blueprint(room_bp)
+
 
 logging.basicConfig(level=logging.DEBUG)
 

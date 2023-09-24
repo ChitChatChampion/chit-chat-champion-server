@@ -1,15 +1,15 @@
-from quart import current_app
+from quart import current_app, jsonify
 from motor.motor_asyncio import AsyncIOMotorClient
-from werkzeug.local import LocalProxy
 
 def get_db():
     if not hasattr(current_app, 'db'):
         current_app.db = AsyncIOMotorClient(current_app.config['MONGODB_URI']).get_database("ChitChatChampions")
     return current_app.db
 
-def get_questions_collection():
-    db = get_db()
-    return db['Questions']
-
-db = LocalProxy(get_db)
-questions_collection = LocalProxy(get_questions_collection)
+async def check_db():
+    try:
+        # Use the MongoDB client to ping the database
+        get_db().command('ping')
+        return jsonify({"message": "Database is accessible"})
+    except Exception as e:
+        return jsonify({"message": f"Database is not accessible: {str(e)}"})

@@ -1,4 +1,5 @@
 from quart import request, jsonify
+import logging
 import requests
 
 
@@ -6,7 +7,8 @@ USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo"
 
 def get_user_info():
     # Get the access token from the request headers
-    access_token = request.headers.get("access_token")
+    # logging.error(request.headers)
+    access_token =  request.headers.get("Access-Token")
 
     if not access_token:
         return jsonify({"error": "Access token missing"}), 401
@@ -29,4 +31,5 @@ def get_user_info():
         else:
             return jsonify({"error": "Failed to fetch user info"}), response.status_code
     except Exception as e:
+        logging.error(e)
         return jsonify({"error": str(e)}), 500

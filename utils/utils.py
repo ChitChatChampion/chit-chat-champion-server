@@ -5,8 +5,8 @@ def getBaseContext(baseContext):
     return purpose, relationship, description
 
 def getCscContext(cscContext):
-    number_of_cards = cscContext.get('number_of_cards')
-    return number_of_cards
+    number_of_questions = cscContext.get('number_of_questions')
+    return number_of_questions
 
 def checkResponseSuccess(response):
     return response[1] == 200

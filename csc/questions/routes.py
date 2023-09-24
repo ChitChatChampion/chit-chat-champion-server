@@ -1,6 +1,7 @@
 from quart import Blueprint, current_app, request, jsonify
 import prompts.prompts as prompts
 from database import check_db, get_db
+import logging
 from utils.user import get_user_info
 from utils.utils import checkResponseSuccess, getBaseContext, getCscContext, prettify_questions
 from utils.questions import generate_unique_question_id, generate_unique_room_id, openai_generate_and_save_qns
@@ -111,12 +112,15 @@ async def delete_csc_question(id):
 # It also generates the questions in the background and saves them in the database in the Users collection
 @csc_questions_bp.route('/generate', methods=['POST'])
 async def ai_generate_csc_questions():
+    request_json = await request.json
     user_info = get_user_info()
+    logging.error(user_info)
     if not checkResponseSuccess(user_info):
+        logging.error("here User not found")
         return user_info # will contain error and status message
     user_email = user_info[0].get("email")
 
-    request_json = await request.json
+    
     contexts_info = save_contexts(user_email, request_json)
     if not checkResponseSuccess(contexts_info):
         return contexts_info
@@ -132,11 +136,11 @@ def craft_openai_messages(contexts):
     purpose = contexts.get("purpose")
     relationship = contexts.get("relationship")
     description = contexts.get("description")
-    number_of_cards = contexts.get("number_of_cards")
+    number_of_questions = contexts.get("number_of_questions")
 
     prompt = f"The participants are {relationship}, and the purpose of the ice-breaker session is {purpose}. \
         Other information about the participants is that: {description}. \
-        The number of questions I want you to generate is {number_of_cards}."
+        The number of questions I want you to generate is {number_of_questions}."
 
     messages = [
         {"role": "system", "content": prompts.system_prompt},
@@ -149,9 +153,9 @@ def craft_openai_messages(contexts):
 
 def save_contexts(user_email, request_json):
     purpose, relationship, description  = getBaseContext(request_json.get('baseContext'))
-    number_of_cards = getCscContext(request_json.get('cscContext'))
-    if number_of_cards > 20:
-        return {"message": "Too many cards requested"}, 400
+    number_of_questions = getCscContext(request_json.get('cscContext'))
+    if number_of_questions > 20:
+        return {"message": "Too many questions requested"}, 400
 
     db = get_db()
     db["Users"].update_one({"_id": user_email},
@@ -163,10 +167,10 @@ def save_contexts(user_email, request_json):
                                         },
                                         'csc': {
                                             'cscContext': {
-                                                'numberOfCards': number_of_cards
+                                                'numberOfQuestions': number_of_questions
                                             }
                                         }
                                     }}, upsert=True
                                 )
     return {"purpose": purpose, "relationship": relationship, "description": description,
-            "number_of_cards": number_of_cards}, 200
+            "number_of_questions": number_of_questions}, 200

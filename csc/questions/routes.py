@@ -36,13 +36,12 @@ async def get_csc_questions():
 @csc_questions_bp.route('/<id>', methods=['PUT'])
 async def update_csc_question(id):
     request_data = await request.json
-    content = request_data.get('content')
-
-    # TODO: check if this works
     user_info = get_user_info()
     if not checkResponseSuccess(user_info):
         return user_info # will contain error and status message
     user_email = user_info[0].get("email")
+
+    content = request_data.get('content')
 
     if not user_email:
         return jsonify({"error": "Invalid user"}), 401
@@ -66,7 +65,6 @@ async def update_csc_question(id):
 
 @csc_questions_bp.route('/csc/questions/create', methods=['POST'])
 async def create_csc_question():
-    # TODO: check if this works
     user_info = get_user_info()
     if not checkResponseSuccess(user_info):
         return user_info # will contain error and status message
@@ -90,7 +88,6 @@ async def create_csc_question():
 
 @csc_questions_bp.route('/<id>', methods=['DELETE'])
 async def delete_csc_question(id):
-    # TODO: check if this works
     user_info = get_user_info()
     if not checkResponseSuccess(user_info):
         return user_info # will contain error and status message

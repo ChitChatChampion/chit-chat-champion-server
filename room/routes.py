@@ -1,4 +1,4 @@
-from quart import Blueprint, current_app, request
+from quart import Blueprint, request
 import prompts.prompts as prompts
 from database import get_db
 import logging
@@ -16,17 +16,18 @@ async def create_csc_room():
     if not checkResponseSuccess(user_info):
         return user_info
     user_email = user_info[0].get("email")
+
     logging.info("{user_email}: Creating csc room")
 
     room_id = await generate_unique_room_id()
-    
+
     # update user with room_id. Do we need this?
     await get_db()["Users"].update_one({"_id": user_email},
                                     {'$set': {
                                         'room_id': room_id
                                     }}, upsert=True
                                 )
-    
+
     user = await get_db()["Users"].find_one({"_id": user_email})
     questions = user["csc"]["questions"]
     # create room with all of user's details

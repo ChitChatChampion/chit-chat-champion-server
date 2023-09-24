@@ -30,7 +30,6 @@ async def save_csc_context():
     request_json = await request.json
     purpose, relationship, description = getBaseContext(request_json.get('baseContext'))
     numberOfCards = getCscContext(request_json.get('cscContext')).get('numberOfCards')
-    # TODO: check if this works
     user_info = get_user_info()
     if not checkResponseSuccess(user_info):
         return user_info # will contain error and status message

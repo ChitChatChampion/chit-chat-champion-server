@@ -18,7 +18,7 @@ MODEL = "gpt-3.5-turbo"
 
 load_dotenv()
 
-openai.api_key = os.getenv("OPENAI_KEY")
+openai.api_key = os.getenv("OPENAI_API_KEY")
 app.config['MONGODB_URI'] = os.getenv("MONGODB_URI")
 app.config['MODEL'] = MODEL
 

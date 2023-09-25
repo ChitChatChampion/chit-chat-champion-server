@@ -11,6 +11,7 @@ def get_user_info():
     access_token =  request.headers.get("Access-Token")
 
     if not access_token:
+        logging.error("Access token missing")
         return jsonify({"error": "Access token missing"}), 401
 
     # Set up headers for the userinfo request

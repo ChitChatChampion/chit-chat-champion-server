@@ -9,7 +9,7 @@ def getCscContext(cscContext):
     return number_of_questions
 
 def checkResponseSuccess(response):
-    return response[1] == 200 or response[1] == 201
+    return response[1] == 200
 
-def format_questions_for_fe(questions):
+def prettify_questions(questions):
     return [{"id": id, "content": content} for id, content in questions.items()]

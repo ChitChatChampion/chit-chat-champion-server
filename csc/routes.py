@@ -2,7 +2,7 @@ from quart import Blueprint, request
 import prompts.prompts as prompts
 from database import get_db
 from utils.user import get_user_info
-from utils.utils import checkResponseSuccess, getBaseContext, getCscContext, prettify_questions
+from utils.utils import checkResponseSuccess, getBaseContext, getCscContext, format_qns_for_fe
 
 csc_bp = Blueprint('csc_bp', __name__, url_prefix='/csc')
 
@@ -21,7 +21,7 @@ async def get_csc_context():
     return {
         "baseContext": user["baseContext"],
         "cscContext": user["csc"]["cscContext"],
-        "questions": prettify_questions(user["csc"]["questions"])
+        "questions": format_qns_for_fe(user["csc"]["questions"])
     }, 200
 
 # creates or updates a user's csc (and/or base) context

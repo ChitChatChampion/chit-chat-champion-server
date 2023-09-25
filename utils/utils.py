@@ -12,5 +12,5 @@ def checkResponseSuccess(response):
     status = response[1]
     return status == 200 or status == 201
 
-def prettify_questions(questions):
+def format_qns_for_fe(questions):
     return [{"id": id, "content": content} for id, content in questions.items()]

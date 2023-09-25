@@ -12,11 +12,15 @@ async def openai_generate_and_save_qns(user_email, messages):
         messages=messages,
         temperature=0.7,
     )
-    questions = response['choices'][0]['message']['content']
+    ai_questions = response['choices'][0]['message']['content']
 
-    question_arr = parse_questions(questions)
+    ai_questions_arr = parse_questions(ai_questions)
+    db_formatted_questions = format_questions_for_db(ai_questions_arr)
     
-    await add_questions_to_user_csc_collection(question_arr, user_email)
+    # TODO: check if this can be changed to background task 
+    # since we just need to return the questions to the frontend
+    await add_questions_to_user_csc_collection(db_formatted_questions, user_email)
+    return db_formatted_questions, 201
 
 def parse_questions(questions):
     if questions[0] == "[" and questions[-1] == "]":
@@ -25,9 +29,8 @@ def parse_questions(questions):
     else:
         return [questions]
 
-async def add_questions_to_user_csc_collection(ai_questions_arr, user_email):
+async def add_questions_to_user_csc_collection(formatted_questions, user_email):
     try:
-        formatted_questions = format_questions(ai_questions_arr)
         await get_db()["Users"].update_one({"_id": user_email},
                                         {'$set': {
                                             'csc.questions': formatted_questions,
@@ -37,7 +40,7 @@ async def add_questions_to_user_csc_collection(ai_questions_arr, user_email):
         return jsonify({"message": f"Error: adding questions to collection"}), 500
 
 # Format the questions as a dictionary where keys are ids and values are questions' contents
-def format_questions(ai_questions):
+def format_questions_for_db(ai_questions):
     questions = {}
     for question in ai_questions:
         question_id = generate_unique_question_id(questions)

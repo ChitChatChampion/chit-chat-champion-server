@@ -38,7 +38,7 @@ async def create_csc_room():
         'is_published': False,
         'questions': questions
     })
-    return {"room_id": room_id}, 200
+    return {"id": room_id}, 201
 
 # GET
 # /room/:id

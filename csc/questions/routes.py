@@ -3,7 +3,7 @@ import prompts.prompts as prompts
 from database import check_db, get_db
 import logging
 from utils.user import get_user_info
-from utils.utils import checkResponseSuccess, getBaseContext, getCscContext, prettify_questions
+from utils.utils import checkResponseSuccess, getBaseContext, getCscContext, format_questions_for_fe
 from utils.questions import generate_unique_question_id, generate_unique_room_id, openai_generate_and_save_qns
 
 csc_questions_bp = Blueprint('csc_questions_bp', __name__, url_prefix='/csc/questions')
@@ -31,7 +31,7 @@ async def get_csc_questions():
     questions = user['csc']['questions']
     if not questions:
         return {"questions": []}, 200
-    return prettify_questions(questions), 200
+    return format_questions_for_fe(questions), 200
 
 
 @csc_questions_bp.route('/<id>', methods=['PUT'])
@@ -119,7 +119,10 @@ async def ai_generate_csc_questions():
         logging.error("here User not found")
         return user_info # will contain error and status message
     user_email = user_info[0].get("email")
-
+    user = await get_db()['Users'].find_one({"_id": user_email})
+    # add user to db if user does not exist
+    if not user:
+        await get_db()['Users'].insert_one({"_id": user_email})
     
     contexts_info = save_contexts(user_email, request_json)
     if not checkResponseSuccess(contexts_info):
@@ -128,9 +131,14 @@ async def ai_generate_csc_questions():
     # generate questions
     messages = craft_openai_messages(contexts_info[0])
 
-    current_app.add_background_task(openai_generate_and_save_qns, user_email, messages)
+    openai_returned = await openai_generate_and_save_qns(user_email, messages)
+    if not checkResponseSuccess(openai_returned):
+        return openai_returned
+    db_formatted_questions = openai_returned[0]
+    fe_formatted_questions = format_questions_for_fe(db_formatted_questions)
+    logging.info({"questions": fe_formatted_questions})
 
-    return {"message": "Questions generated successfully"}, 200
+    return {"questions": fe_formatted_questions}, 201
 
 def craft_openai_messages(contexts):
     purpose = contexts.get("purpose")

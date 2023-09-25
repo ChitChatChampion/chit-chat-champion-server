@@ -119,8 +119,11 @@ async def ai_generate_csc_questions():
         logging.error("here User not found")
         return user_info # will contain error and status message
     user_email = user_info[0].get("email")
+    user = await get_db()['Users'].find_one({"_id": user_email})
+    # add user to db if user does not exist
+    if not user:
+        await get_db()['Users'].insert_one({"_id": user_email})
 
-    
     contexts_info = save_contexts(user_email, request_json)
     if not checkResponseSuccess(contexts_info):
         return contexts_info
@@ -128,9 +131,14 @@ async def ai_generate_csc_questions():
     # generate questions
     messages = craft_openai_messages(contexts_info[0])
 
-    current_app.add_background_task(openai_generate_and_save_qns, user_email, messages)
+    openai_returned = await openai_generate_and_save_qns(user_email, messages)
+    if not checkResponseSuccess(openai_returned):
+        return openai_returned
+    db_formatted_questions = openai_returned[0]
+    fe_formatted_questions = prettify_questions(db_formatted_questions)
 
-    return {"message": "Questions generated successfully"}, 200
+    logging.info({"questions": fe_formatted_questions})
+    return {"questions": fe_formatted_questions}, 201
 
 def craft_openai_messages(contexts):
     purpose = contexts.get("purpose")

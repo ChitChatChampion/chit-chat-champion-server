@@ -110,6 +110,7 @@ async def delete_csc_question(id):
 # This function is called when the user clicks the "Generate Questions" button
 # It saves the baseContext and cscContext in the database in the Users collection
 # It also generates the questions in the background and saves them in the database in the Users collection
+# Generated questions are added on to the user's existing questions
 @csc_questions_bp.route('/generate', methods=['POST'])
 async def ai_generate_csc_questions():
     request_json = await request.json

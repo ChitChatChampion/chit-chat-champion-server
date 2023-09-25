@@ -2,14 +2,13 @@ from quart import Blueprint, request
 import prompts.prompts as prompts
 from database import get_db
 from utils.user import get_user_info
-from utils.utils import checkResponseSuccess, getBaseContext, getCscContext, prettify_questions
+from utils.utils import checkResponseSuccess, getBaseContext, getCscContext, format_qns_for_fe
 
 csc_bp = Blueprint('csc_bp', __name__, url_prefix='/csc')
 
 # Get csc context from user whose access token is in response header
 @csc_bp.route('/context', methods=["GET"])
 async def get_csc_context():
-    # # TODO: check if this works
     user_info = get_user_info()
     if not checkResponseSuccess(user_info):
         return user_info # will contain error and status message
@@ -22,7 +21,7 @@ async def get_csc_context():
     return {
         "baseContext": user["baseContext"],
         "cscContext": user["csc"]["cscContext"],
-        "questions": prettify_questions(user["csc"]["questions"])
+        "questions": format_qns_for_fe(user["csc"]["questions"])
     }, 200
 
 # creates or updates a user's csc (and/or base) context
@@ -30,8 +29,7 @@ async def get_csc_context():
 async def save_csc_context():
     request_json = await request.json
     purpose, relationship, description = getBaseContext(request_json.get('baseContext'))
-    numberOfCards = getCscContext(request_json.get('cscContext')).get('numberOfCards')
-    # TODO: check if this works
+    numberOfQuestions = getCscContext(request_json.get('cscContext')).get('numberOfQuestions')
     user_info = get_user_info()
     if not checkResponseSuccess(user_info):
         return user_info # will contain error and status message
@@ -50,7 +48,7 @@ async def save_csc_context():
                                         },
                                         'csc': {
                                             'cscContext': {
-                                                'numberOfCards': numberOfCards
+                                                'numberOfQuestions': numberOfQuestions
                                             }
                                         }
                                     }}, upsert=True

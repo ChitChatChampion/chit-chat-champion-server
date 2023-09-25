@@ -1,16 +1,16 @@
 def getBaseContext(baseContext):
-    age = baseContext.get('age')
-    familiarity = baseContext.get('familiarity')
     purpose = baseContext.get('purpose')
-    group_description = baseContext.get('group_description')
-    return age, familiarity, purpose, group_description
+    relationship = baseContext.get('relationship')
+    description = baseContext.get('description')
+    return purpose, relationship, description
 
 def getCscContext(cscContext):
-    number_of_cards = cscContext.get('number_of_cards')
-    return number_of_cards
+    number_of_questions = cscContext.get('number_of_questions')
+    return number_of_questions
 
 def checkResponseSuccess(response):
-    return response[1] == 200
+    status = response[1]
+    return status == 200 or status == 201
 
-def prettify_questions(questions):
+def format_qns_for_fe(questions):
     return [{"id": id, "content": content} for id, content in questions.items()]

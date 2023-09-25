@@ -2,6 +2,7 @@
 # encoding: utf-8
 import os
 from quart import Quart
+from quart_cors import cors
 from motor.motor_asyncio import AsyncIOMotorClient
 import openai
 import logging
@@ -18,9 +19,16 @@ MODEL = "gpt-3.5-turbo"
 
 load_dotenv()
 
-openai.api_key = os.getenv("OPENAI_KEY")
+openai.api_key = os.getenv("OPENAI_API_KEY")
 app.config['MONGODB_URI'] = os.getenv("MONGODB_URI")
 app.config['MODEL'] = MODEL
+
+# Configure CORS policies
+# TODO: update this to only allow requests from the frontend app
+app = cors(
+    app,
+    allow_origin="*"
+)
 
 # Create an AsyncIOMotorClient within the app context
 @app.before_serving

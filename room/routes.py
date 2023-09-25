@@ -1,37 +1,44 @@
-from quart import Blueprint, current_app, request
+from quart import Blueprint, request
 import prompts.prompts as prompts
 from database import get_db
+import logging
 from utils.utils import checkResponseSuccess, getBaseContext, getCscContext
 from utils.user import get_user_info
-from utils.questions import generate_unique_room_id, openai_generate_qns_add_db, set_room_published_status
+from utils.questions import generate_unique_room_id, set_room_published_status
 
 
 room_bp = Blueprint('room_bp', __name__, url_prefix='/room')
 
-# Creates a CSC room
+# Creates a CSC room with the user's questions
 @room_bp.route('/csc/create', methods=["POST"])
 async def create_csc_room():
-    request_json = await request.json
-    age, familiarity, purpose, group_description = getBaseContext(request_json.get('baseContext'))
-    number_of_cards = getCscContext(request_json.get('cscContext'))
+    user_info = get_user_info()
+    if not checkResponseSuccess(user_info):
+        return user_info
+    user_email = user_info[0].get("email")
 
-    if number_of_cards > 20:
-        return {"message": "Too many cards requested"}, 400
-
-    prompt = f"The age range of the participants in the ice-breaker session is {age} years old, they are currently {familiarity}, and the purpose of the ice-breaker session is {purpose}. Other information about the ice-breaker session is that: {group_description}. The number of questions I want you to generate is {number_of_cards}."
-
-    messages = [
-        {"role": "system", "content": prompts.system_prompt},
-        {"role": "user", "content": prompts.user_example_csc},
-        {"role": "assistant", "content": prompts.assistant_example_csc},
-        {"role": "user", "content": prompt}
-    ]
+    logging.info("{user_email}: Creating csc room")
 
     room_id = await generate_unique_room_id()
 
-    current_app.add_background_task(openai_generate_qns_add_db, room_id, messages)
+    # update user with room_id. Do we need this?
+    await get_db()["Users"].update_one({"_id": user_email},
+                                    {'$set': {
+                                        'room_id': room_id
+                                    }}, upsert=True
+                                )
 
-    return {"room_id": room_id}
+    user = await get_db()["Users"].find_one({"_id": user_email})
+    questions = user["csc"]["questions"]
+    # create room with all of user's details
+    await get_db()["Rooms"].insert_one({
+        '_id': room_id,
+        'user_id': user_email,
+        'game_type': 'csc',
+        'is_published': False,
+        'questions': questions
+    })
+    return {"id": room_id}, 201
 
 # GET
 # /room/:id
@@ -54,7 +61,7 @@ async def get_room(room_id):
 async def publish_room():
     request_json = await request.json
     room_id = request_json.get('room_id')
-    # TODO: update room with user's questions
+
     user_info = get_user_info()
     if not checkResponseSuccess(user_info):
         return user_info

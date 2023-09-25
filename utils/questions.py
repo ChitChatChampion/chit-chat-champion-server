@@ -5,9 +5,8 @@ from nanoid import generate
 import openai
 from quart import current_app, jsonify
 
-
-async def openai_generate_qns_add_db(room_id, messages):
-    logging.info("{room_id}: Querying OpenAI")
+async def openai_generate_and_save_qns(user_email, messages):
+    logging.info(f"{user_email}: Querying OpenAI")
     response = openai.ChatCompletion.create(
         model=current_app.config['MODEL'],
         messages=messages,
@@ -15,14 +14,11 @@ async def openai_generate_qns_add_db(room_id, messages):
     )
     questions = response['choices'][0]['message']['content']
 
-    # # add questions in the form of room-id to questions key value pairs
-    logging.info(f"{room_id}: Adding questions to database: {questions}")
-
     question_arr = parse_questions(questions)
-    
-    await add_questions_to_room_collection(question_arr, room_id, "csc")
 
-    logging.info(f"{room_id}: Done adding questions to database")
+    db_response = await add_questions_to_user_csc_collection(question_arr, user_email)
+
+    return db_response
 
 def parse_questions(questions):
     if questions[0] == "[" and questions[-1] == "]":
@@ -30,6 +26,27 @@ def parse_questions(questions):
         return literal_eval(questions)
     else:
         return [questions]
+
+async def add_questions_to_user_csc_collection(ai_questions_arr, user_email):
+    try:
+        formatted_questions = format_qns_for_db(ai_questions_arr)
+        await get_db()["Users"].update_one({"_id": user_email},
+                                        {'$set': {
+                                            'csc.questions': formatted_questions,
+                                        }})
+        return formatted_questions, 201
+    except Exception as e:
+        logging.error(f"Error: {str(e)}")
+        return jsonify({"message": f"Error: adding questions to collection"}), 500
+
+# Format the questions as a dictionary where keys are ids and values are questions' contents
+def format_qns_for_db(ai_questions):
+    questions = {}
+    for question in ai_questions:
+        question_id = generate_unique_question_id(questions)
+        questions[question_id] = question
+    return questions
+
 
 async def add_questions_to_room_collection(questions, room_id, game_type):
     try:
@@ -63,3 +80,13 @@ async def set_room_published_status(room_id, set_is_published):
                                         }})
     
     return {"message": f"Room {room_id} {'published' if set_is_published else 'unpublished'} successfully"}
+
+def generate_unique_question_id(questions):
+    question_id = generate(size=3)
+    if not questions:
+        return question_id
+    while True:
+        if question_id not in questions.keys():
+            break
+        question_id = generate(size=3)
+    return question_id

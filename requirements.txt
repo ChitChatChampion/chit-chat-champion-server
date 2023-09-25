@@ -37,6 +37,7 @@ python-decouple==3.7
 python-dotenv==1.0.0
 pytz==2022.7
 quart==0.18.4
+quart-cors==0.7.0
 Quart-Motor==2.4.6
 requests==2.28.2
 six==1.16.0

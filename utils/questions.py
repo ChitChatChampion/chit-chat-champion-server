@@ -15,8 +15,10 @@ async def openai_generate_and_save_qns(user_email, messages):
     questions = response['choices'][0]['message']['content']
 
     question_arr = parse_questions(questions)
-    
-    await add_questions_to_user_csc_collection(question_arr, user_email)
+
+    db_response = await add_questions_to_user_csc_collection(question_arr, user_email)
+
+    return db_response
 
 def parse_questions(questions):
     if questions[0] == "[" and questions[-1] == "]":
@@ -32,6 +34,7 @@ async def add_questions_to_user_csc_collection(ai_questions_arr, user_email):
                                         {'$set': {
                                             'csc.questions': formatted_questions,
                                         }})
+        return formatted_questions, 201
     except Exception as e:
         logging.error(f"Error: {str(e)}")
         return jsonify({"message": f"Error: adding questions to collection"}), 500

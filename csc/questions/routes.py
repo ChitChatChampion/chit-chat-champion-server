@@ -64,7 +64,7 @@ async def update_csc_question(id):
         error_message = f"Error: {str(e)}"
         return jsonify({"message": error_message}), 500
 
-@csc_questions_bp.route('/csc/questions/create', methods=['POST'])
+@csc_questions_bp.route('/create', methods=['POST'])
 async def create_csc_question():
     user_info = get_user_info()
     if not checkResponseSuccess(user_info):

@@ -29,8 +29,11 @@ def parse_questions(questions):
 
 async def add_questions_to_user_csc_collection(ai_questions_arr, user_email):
     try:
-        user = await get_db()["Users"].find_one({"_id": user_email}, {"csc.questions": 1})
+        logging.info(f"{user_email}: Adding questions to collection")
+        user = await get_db()["Users"].find_one({"_id": user_email})
+
         existing_questions = user["csc"]["questions"]
+
         formatted_questions = format_qns_for_db(existing_questions, ai_questions_arr)
         await get_db()["Users"].update_one({"_id": user_email},
                                         {'$set': {
@@ -47,6 +50,7 @@ def format_qns_for_db(existing_questions, ai_questions):
     for question in ai_questions:
         question_id = generate_unique_question_id(questions)
         questions[question_id] = question
+    logging.info(questions)
     return questions
 
 

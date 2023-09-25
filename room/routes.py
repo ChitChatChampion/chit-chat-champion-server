@@ -2,7 +2,7 @@ from quart import Blueprint, request
 import prompts.prompts as prompts
 from database import get_db
 import logging
-from utils.utils import checkResponseSuccess, getBaseContext, getCscContext
+from utils.utils import checkResponseSuccess, format_qns_for_fe
 from utils.user import get_user_info
 from utils.questions import generate_unique_room_id, set_room_published_status
 
@@ -49,12 +49,15 @@ async def create_csc_room():
 @room_bp.route('/<room_id>', methods=["GET"])
 async def get_room(room_id):
     room = await get_db()["Rooms"].find_one({"_id": room_id})
-    if room:
-        # TODO: check when this is called. As of now it will not return
-        # updated questions since we only update questions in Users collection
-        return {"game_type": room["game_type"], "questions": room["questions"]}
-    else:
+    if not room:
         return {"error": "Room not found"}, 404
+    game_type = room["game_type"]
+    if game_type == 'csc' or 'bb':
+        formatted_qns = format_qns_for_fe(room["questions"])
+        return {"game_type": game_type, "questions": formatted_qns}, 200
+    else:
+        return {"error": f"Unrecognised game type {game_type}"}, 404
+        
 
 # create room: POST /room/publish, return success/failure
 @room_bp.route('/publish', methods=["POST"])

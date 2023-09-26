@@ -3,7 +3,8 @@ import prompts.prompts as prompts
 from database import get_db
 import logging
 from utils.user import get_user_info
-from utils.utils import checkResponseSuccess, getBaseContext, getBbContext, format_qns_for_fe
+from utils.utils import checkResponseSuccess, format_qns_for_fe
+from utils.questions import save_contexts
 
 bb_bp = Blueprint('bb_bp', __name__, url_prefix='/bb')
 
@@ -30,25 +31,9 @@ async def get_bb_context():
 @bb_bp.route('/context', methods=["POST"])
 async def save_bb_context():
     request_json = await request.json
-    purpose, relationship, description = getBaseContext(request_json.get('baseContext'))
-    numberOfQuestions = getBbContext(request_json.get('bbContext')).get('numberOfQuestions')
     user_info = await get_user_info()
     if not checkResponseSuccess(user_info):
         return user_info # will contain error and status message
     user_email = user_info[0].get("email")
 
-    user = await get_db()["Users"].find_one({"_id": user_email})
-    if not user:
-        return {"message": "User not found"}, 404
-
-    await get_db()["Users"].update_one({"_id": user_email},
-                                    {'$set': {
-                                        'baseContext': {
-                                            'purpose': purpose,
-                                            'relationship': relationship,
-                                            'description': description
-                                        },
-                                        'bb.bbContext.numberOfQuestions': numberOfQuestions
-                                    }}, upsert=True
-                                )
-    return {"message": "success"}, 201
+    return await save_contexts(user_email, request_json, 'bb')

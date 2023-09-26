@@ -18,7 +18,7 @@ async def check_database():
 
 @csc_questions_bp.route('/', methods=['GET'])
 async def get_csc_questions():
-    user_info = get_user_info()
+    user_info = await get_user_info()
     if not checkResponseSuccess(user_info):
         return user_info # will contain error and status message
 
@@ -37,7 +37,7 @@ async def get_csc_questions():
 @csc_questions_bp.route('/<id>', methods=['PUT'])
 async def update_csc_question(id):
     request_data = await request.json
-    user_info = get_user_info()
+    user_info = await get_user_info()
     if not checkResponseSuccess(user_info):
         return user_info # will contain error and status message
     user_email = user_info[0].get("email")
@@ -66,7 +66,7 @@ async def update_csc_question(id):
 
 @csc_questions_bp.route('/create', methods=['POST'])
 async def create_csc_question():
-    user_info = get_user_info()
+    user_info = await get_user_info()
     if not checkResponseSuccess(user_info):
         return user_info # will contain error and status message
     user_email = user_info[0].get("email")
@@ -89,7 +89,7 @@ async def create_csc_question():
 
 @csc_questions_bp.route('/<id>', methods=['DELETE'])
 async def delete_csc_question(id):
-    user_info = get_user_info()
+    user_info = await get_user_info()
     if not checkResponseSuccess(user_info):
         return user_info # will contain error and status message
     user_email = user_info[0].get("email")
@@ -114,7 +114,7 @@ async def delete_csc_question(id):
 @csc_questions_bp.route('/generate', methods=['POST'])
 async def ai_generate_csc_questions():
     request_json = await request.json
-    user_info = get_user_info()
+    user_info = await get_user_info()
     logging.error(user_info)
     if not checkResponseSuccess(user_info):
         logging.error("here User not found")

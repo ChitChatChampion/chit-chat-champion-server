@@ -12,7 +12,7 @@ room_bp = Blueprint('room_bp', __name__, url_prefix='/room')
 # Creates a CSC room with the user's questions
 @room_bp.route('/csc/create', methods=["POST"])
 async def create_csc_room():
-    user_info = get_user_info()
+    user_info = await get_user_info()
     if not checkResponseSuccess(user_info):
         return user_info
     user_email = user_info[0].get("email")
@@ -65,7 +65,7 @@ async def publish_room():
     request_json = await request.json
     room_id = request_json.get('room_id')
 
-    user_info = get_user_info()
+    user_info = await get_user_info()
     if not checkResponseSuccess(user_info):
         return user_info
     user_email = user_info[0].get("email")

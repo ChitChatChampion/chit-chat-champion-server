@@ -1,9 +1,36 @@
 from quart import request, jsonify
 import logging
 import requests
+from database import get_db
 
 
 USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo"
+
+async def signup_user(user_info):
+    user = user_info
+    email = user.get("email")
+    name = user.get("name")
+    db = get_db()
+    # if user with email does not exist, add user to db
+    if not await db["Users"].find_one({"_id": email}):
+        await db["Users"].insert_one({
+            '_id': email,
+            'name': name,
+            'baseContext': {},
+            'bb': {
+                'bbContext': {},
+                'questions': {}
+            },
+            'csc': {
+                'cscContext': {},
+                'questions': {}
+            },
+            'quiz': {
+                'quizContext': {},
+                'questions': {}
+            }
+        })
+        logging.info(f"Added user {email} to database")
 
 def get_user_info():
     # Get the access token from the request headers

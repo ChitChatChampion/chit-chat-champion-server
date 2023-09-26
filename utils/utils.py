@@ -8,6 +8,10 @@ def getCscContext(cscContext):
     number_of_questions = cscContext.get('number_of_questions')
     return number_of_questions
 
+def getBbContext(bbContext):
+    number_of_questions = bbContext.get('number_of_questions')
+    return number_of_questions
+
 def checkResponseSuccess(response):
     status = response[1]
     return status == 200 or status == 201

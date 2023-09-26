@@ -6,10 +6,12 @@ from quart_cors import cors
 from motor.motor_asyncio import AsyncIOMotorClient
 import openai
 import logging
+from bb.questions.routes import bb_questions_bp
 from csc.questions.routes import csc_questions_bp
-from user.routes import user_bp
+from bb.routes import bb_bp
 from csc.routes import csc_bp
 from room.routes import room_bp
+from user.routes import user_bp
 
 from dotenv import load_dotenv
 
@@ -40,9 +42,11 @@ def query_records():
     return {"message": "Hello World!"}
 
 # Register all blueprints
+app.register_blueprint(bb_bp)
+app.register_blueprint(bb_questions_bp)
+app.register_blueprint(csc_bp)
 app.register_blueprint(csc_questions_bp)
 app.register_blueprint(user_bp)
-app.register_blueprint(csc_bp)
 app.register_blueprint(room_bp)
 
 

@@ -2,13 +2,13 @@ from quart import Blueprint, request
 import prompts.prompts as prompts
 from database import get_db
 from utils.user import get_user_info
-from utils.utils import checkResponseSuccess, getBaseContext, getCscContext, format_qns_for_fe
+from utils.utils import checkResponseSuccess, getBaseContext, getBbContext, format_qns_for_fe
 
-csc_bp = Blueprint('csc_bp', __name__, url_prefix='/csc')
+bb_bp = Blueprint('bb_bp', __name__, url_prefix='/bb')
 
-# Get csc context from user whose access token is in response header
-@csc_bp.route('/context', methods=["GET"])
-async def get_csc_context():
+# Get bb context from user whose access token is in response header
+@bb_bp.route('/context', methods=["GET"])
+async def get_bb_context():
     user_info = get_user_info()
     if not checkResponseSuccess(user_info):
         return user_info # will contain error and status message
@@ -20,16 +20,16 @@ async def get_csc_context():
         return {"error": "User not found"}, 404
     return {
         "baseContext": user["baseContext"],
-        "cscContext": user["csc"]["cscContext"],
-        "questions": format_qns_for_fe(user["csc"]["questions"])
+        "bbContext": user["bb"]["bbContext"],
+        "questions": format_qns_for_fe(user["bb"]["questions"])
     }, 200
 
-# creates or updates a user's csc (and/or base) context
-@csc_bp.route('/context', methods=["POST"])
-async def save_csc_context():
+# creates or updates a user's bb (and/or base) context
+@bb_bp.route('/context', methods=["POST"])
+async def save_bb_context():
     request_json = await request.json
     purpose, relationship, description = getBaseContext(request_json.get('baseContext'))
-    numberOfQuestions = getCscContext(request_json.get('cscContext')).get('numberOfQuestions')
+    numberOfQuestions = getBbContext(request_json.get('bbContext')).get('numberOfQuestions')
     user_info = get_user_info()
     if not checkResponseSuccess(user_info):
         return user_info # will contain error and status message
@@ -46,7 +46,7 @@ async def save_csc_context():
                                             'relationship': relationship,
                                             'description': description
                                         },
-                                        'csc.cscContext.numberOfQuestions': numberOfQuestions
+                                        'bb.bbContext.numberOfQuestions': numberOfQuestions
                                     }}, upsert=True
                                 )
-    return {"message": "success"}
+    return {"message": "success"}, 201

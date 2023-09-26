@@ -165,8 +165,9 @@ async def get_contexts(user_email, game_type):
     if not user:
         logging.error(f"User {user_email} not found")
         return {"error": "User not found"}, 404
+    gameContext = f"{game_type}Context"
     return {
         "baseContext": user["baseContext"],
-        f"{game_type}Context": user[game_type]["cscContext"],
+        gameContext: user[game_type][gameContext],
         "questions": format_qns_for_fe(user[game_type]["questions"])
     }, 200

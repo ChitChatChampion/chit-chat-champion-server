@@ -3,8 +3,8 @@ import prompts.prompts as prompts
 from database import check_db, get_db
 import logging
 from utils.user import get_user_info
-from utils.utils import checkResponseSuccess, format_qns_for_fe
-from utils.questions import openai_generate_qns, add_questions_to_user_collection, save_contexts, \
+from utils.utils import checkResponseSuccess, format_qns_for_fe, openai_generate_response
+from utils.questions import add_questions_to_user_collection, save_contexts, \
     get_questions, update_question, create_question, delete_question
 
 csc_questions_bp = Blueprint('csc_questions_bp', __name__, url_prefix='/csc/questions')
@@ -53,7 +53,7 @@ async def ai_generate_csc_questions():
     # generate questions
     messages = craft_openai_csc_messages(contexts_info[0])
 
-    question_arr = openai_generate_qns(user_email, messages)
+    question_arr = openai_generate_response(user_email, messages)
 
     db_response = await add_questions_to_user_collection(question_arr, user_email, 'csc')
     if not checkResponseSuccess(db_response):

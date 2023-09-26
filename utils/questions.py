@@ -1,34 +1,9 @@
-from ast import literal_eval
 from database import get_db
 import logging
 from nanoid import generate
-import openai
-from quart import current_app, jsonify, request
+from quart import jsonify, request
 from utils.user import get_user_info
 from utils.utils import getBaseContext, checkResponseSuccess, format_qns_for_fe
-
-def openai_generate_qns(user_email, messages):
-    logging.info(f"{user_email}: Querying OpenAI")
-    response = openai.ChatCompletion.create(
-        model=current_app.config['MODEL'],
-        messages=messages,
-        temperature=0.7,
-    )
-    questions = response['choices'][0]['message']['content']
-
-    question_arr = parse_questions(questions)
-
-    return question_arr
-
-def parse_questions(questions):
-    if questions[0] == "[" and questions[-1] == "]":
-        # This may be dangerous in the case of prompt injection
-        return literal_eval(questions)
-    else:
-        # We want to remove the quotation marks for a single question
-        if questions[0] == "\"" and questions[-1] == "\"":
-            questions = questions[1:-1]
-        return [questions]
 
 async def add_questions_to_user_collection(ai_questions_arr, user_email, game_type):
     try:

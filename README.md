@@ -35,7 +35,7 @@ I receive:
     "description": "20-year-old singaporean university computing students who have no social life"
   },
   "cscContext": {
-    "numberOfQuestions": 10
+    "number_of_questions": 10
   },
   "questions": [
     {"id": 123, "content": "What is your favorite food?"},
@@ -52,7 +52,7 @@ You receive:
     "description": "20-year-old singaporean university computing students who have no social life"
   },
   "cscContext": {
-    "numberOfQuestions": 10
+    "number_of_questions": 10
   },
 }
 I receive:
@@ -107,7 +107,7 @@ I receive:
     "description": "20-year-old singaporean university computing students who have no social life"
   },
   "bbContext": {
-    "numberOfQuestions": 10
+    "number_of_questions": 10
   },
   "questions": [
     {"id": 123, "content": "What is your favorite food?"},
@@ -124,7 +124,7 @@ You receive:
     "description": "20-year-old singaporean university computing students who have no social life"
   },
   "bbContext": {
-    "numberOfQuestions": 10
+    "number_of_questions": 10
   },
 }
 I receive:
@@ -209,7 +209,7 @@ I receive:
     "description": "20-year-old singaporean university computing students who have no social life"
   },
   "quizContext": {
-    "numberOfQuestions": 10
+    "number_of_questions": 10
   }
 }
 
@@ -222,7 +222,7 @@ You receive:
     "description": "20-year-old singaporean university computing students who have no social life"
   },
   "quizContext": {
-    "numberOfQuestions": 10
+    "number_of_questions": 10
   }
 }
 I receive:

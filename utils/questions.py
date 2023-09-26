@@ -1,34 +1,9 @@
-from ast import literal_eval
 from database import get_db
 import logging
 from nanoid import generate
-import openai
-from quart import current_app, jsonify, request
+from quart import jsonify, request
 from utils.user import get_user_info
 from utils.utils import getBaseContext, checkResponseSuccess, format_qns_for_fe
-
-def openai_generate_qns(user_email, messages):
-    logging.info(f"{user_email}: Querying OpenAI")
-    response = openai.ChatCompletion.create(
-        model=current_app.config['MODEL'],
-        messages=messages,
-        temperature=0.7,
-    )
-    questions = response['choices'][0]['message']['content']
-
-    question_arr = parse_questions(questions)
-
-    return question_arr
-
-def parse_questions(questions):
-    if questions[0] == "[" and questions[-1] == "]":
-        # This may be dangerous in the case of prompt injection
-        return literal_eval(questions)
-    else:
-        # We want to remove the quotation marks for a single question
-        if questions[0] == "\"" and questions[-1] == "\"":
-            questions = questions[1:-1]
-        return [questions]
 
 async def add_questions_to_user_collection(ai_questions_arr, user_email, game_type):
     try:
@@ -181,3 +156,18 @@ async def delete_question(id, game_type):
         error_message = f"Error: {str(e)}"
         return jsonify({"message": error_message}), 500
 
+async def get_contexts(user_email, game_type):
+    if game_type not in ['csc', 'bb']:
+        logging.error(f"Invalid game type {game_type} in get_contexts")
+        return {"error": "Error"}, 400
+    db = get_db()
+    user = await db['Users'].find_one({'_id': user_email})
+    if not user:
+        logging.error(f"User {user_email} not found")
+        return {"error": "User not found"}, 404
+    gameContext = f"{game_type}Context"
+    return {
+        "baseContext": user["baseContext"],
+        gameContext: user[game_type][gameContext],
+        "questions": format_qns_for_fe(user[game_type]["questions"])
+    }, 200

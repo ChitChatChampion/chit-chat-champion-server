@@ -3,10 +3,9 @@ import prompts.prompts as prompts
 from database import check_db, get_db
 import logging
 from utils.user import get_user_info
-from utils.utils import checkResponseSuccess, format_qns_for_fe
-from utils.questions import openai_generate_qns, \
-    add_questions_to_user_collection, save_contexts, get_questions, update_question, \
-    create_question, delete_question
+from utils.utils import checkResponseSuccess, format_qns_for_fe, openai_generate_response
+from utils.questions import add_questions_to_user_collection, save_contexts, \
+    get_questions, update_question, create_question, delete_question
 
 bb_questions_bp = Blueprint('bb_questions_bp', __name__, url_prefix='/bb/questions')
 
@@ -40,21 +39,21 @@ async def delete_bb_question(id):
 # Generated questions are added on to the user's existing questions
 @bb_questions_bp.route('/generate', methods=['POST'])
 async def ai_generate_bb_questions():
-    request_json = await request.json
     user_info = await get_user_info()
-    logging.error(user_info)
     if not checkResponseSuccess(user_info):
         logging.error("here User not found")
         return user_info # will contain error and status message
     user_email = user_info[0].get("email")
 
-    contexts_info = save_bb_contexts(user_email, request_json)
+    request_json = await request.json
+    contexts_info = save_contexts(user_email, request_json, 'bb')
     if not checkResponseSuccess(contexts_info):
         return contexts_info
+
     # generate questions
     messages = craft_openai_bb_messages(contexts_info[0])
 
-    question_arr = openai_generate_qns(user_email, messages)
+    question_arr = openai_generate_response(user_email, messages)
 
     db_response = await add_questions_to_user_collection(question_arr, user_email, 'bb')
     if not checkResponseSuccess(db_response):
@@ -86,7 +85,3 @@ def craft_openai_bb_messages(contexts):
         {"role": "user", "content": prompt}
     ]
     return messages
-
-
-def save_bb_contexts(user_email, request_json):
-    return save_contexts(user_email, request_json, 'bb')

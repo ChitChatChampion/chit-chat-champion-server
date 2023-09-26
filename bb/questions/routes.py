@@ -3,8 +3,9 @@ import prompts.prompts as prompts
 from database import check_db, get_db
 import logging
 from utils.user import get_user_info
-from utils.utils import checkResponseSuccess, getBaseContext, getBbContext, format_qns_for_fe
-from utils.questions import generate_unique_question_id, openai_generate_qns, add_questions_to_user_collection
+from utils.utils import checkResponseSuccess, format_qns_for_fe
+from utils.questions import generate_unique_question_id, openai_generate_qns, \
+    add_questions_to_user_collection, save_contexts, get_questions
 
 bb_questions_bp = Blueprint('bb_questions_bp', __name__, url_prefix='/bb/questions')
 
@@ -17,20 +18,7 @@ async def check_database():
 
 @bb_questions_bp.route('/', methods=['GET'])
 async def get_bb_questions():
-    user_info = await get_user_info()
-    if not checkResponseSuccess(user_info):
-        return user_info # will contain error and status message
-
-    user_email = user_info[0].get("email")
-    # user_email = "user@example.com"
-
-    user = await get_db()['Users'].find_one({"_id": user_email})
-    if not user:
-        return jsonify({"error": "User not found"}), 404
-    questions = user['bb']['questions']
-    if not questions:
-        return {"questions": []}, 200
-    return format_qns_for_fe(questions), 200
+    return await get_questions('bb')
 
 
 @bb_questions_bp.route('/<id>', methods=['PUT'])
@@ -139,6 +127,7 @@ async def ai_generate_bb_questions():
     logging.info({"questions": fe_formatted_questions})
     return {"questions": fe_formatted_questions}, 201
 
+
 def craft_openai_bb_messages(contexts):
     purpose = contexts.get("purpose")
     relationship = contexts.get("relationship")
@@ -161,22 +150,4 @@ def craft_openai_bb_messages(contexts):
 
 
 def save_bb_contexts(user_email, request_json):
-    purpose, relationship, description  = getBaseContext(request_json.get('baseContext'))
-    number_of_questions = getBbContext(request_json.get('bbContext'))
-    if number_of_questions > 20:
-        return {"message": "Too many questions requested"}, 400
-
-    db = get_db()
-    
-    db["Users"].update_one({"_id": user_email},
-                                    {'$set': {
-                                        'baseContext': {
-                                            'purpose': purpose,
-                                            'relationship': relationship,
-                                            'description': description
-                                        },
-                                        'bb.bbContext.numberOfQuestions': number_of_questions
-                                    }}, upsert=True
-                                )
-    return {"purpose": purpose, "relationship": relationship, "description": description,
-            "number_of_questions": number_of_questions}, 200
+    return save_contexts(user_email, request_json, 'bb')

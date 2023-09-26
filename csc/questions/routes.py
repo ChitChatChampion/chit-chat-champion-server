@@ -3,8 +3,9 @@ import prompts.prompts as prompts
 from database import check_db, get_db
 import logging
 from utils.user import get_user_info
-from utils.utils import checkResponseSuccess, getBaseContext, getCscContext, format_qns_for_fe
-from utils.questions import generate_unique_question_id, openai_generate_qns, add_questions_to_user_collection
+from utils.utils import checkResponseSuccess, format_qns_for_fe
+from utils.questions import generate_unique_question_id, openai_generate_qns, \
+    add_questions_to_user_collection, save_contexts, get_questions
 
 csc_questions_bp = Blueprint('csc_questions_bp', __name__, url_prefix='/csc/questions')
 
@@ -18,21 +19,7 @@ async def check_database():
 
 @csc_questions_bp.route('/', methods=['GET'])
 async def get_csc_questions():
-    user_info = await get_user_info()
-    if not checkResponseSuccess(user_info):
-        return user_info # will contain error and status message
-
-    user_email = user_info[0].get("email")
-    # user_email = "user@example.com"
-
-    user = await get_db()['Users'].find_one({"_id": user_email})
-    if not user:
-        return jsonify({"error": "User not found"}), 404
-    questions = user['csc']['questions']
-    if not questions:
-        return {"questions": []}, 200
-    return format_qns_for_fe(questions), 200
-
+    return await get_questions('csc')
 
 @csc_questions_bp.route('/<id>', methods=['PUT'])
 async def update_csc_question(id):
@@ -159,22 +146,4 @@ def craft_openai_csc_messages(contexts):
 
 
 def save_csc_contexts(user_email, request_json):
-    purpose, relationship, description  = getBaseContext(request_json.get('baseContext'))
-    number_of_questions = getCscContext(request_json.get('cscContext'))
-    if number_of_questions > 20:
-        return {"message": "Too many questions requested"}, 400
-
-    db = get_db()
-    
-    db["Users"].update_one({"_id": user_email},
-                                    {'$set': {
-                                        'baseContext': {
-                                            'purpose': purpose,
-                                            'relationship': relationship,
-                                            'description': description
-                                        },
-                                        'csc.cscContext.numberOfQuestions': number_of_questions
-                                    }}, upsert=True
-                                )
-    return {"purpose": purpose, "relationship": relationship, "description": description,
-            "number_of_questions": number_of_questions}, 200
+    return save_contexts(user_email, request_json, 'csc')

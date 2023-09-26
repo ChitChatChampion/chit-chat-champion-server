@@ -4,6 +4,8 @@ import logging
 from nanoid import generate
 import openai
 from quart import current_app, jsonify
+from utils.user import get_user_info
+from utils.utils import getBaseContext, checkResponseSuccess, format_qns_for_fe
 
 def openai_generate_qns(user_email, messages):
     logging.info(f"{user_email}: Querying OpenAI")
@@ -64,3 +66,42 @@ def generate_unique_question_id(questions):
             break
         question_id = generate(size=3)
     return question_id
+
+def save_contexts(user_email, request_json, game_type):
+    purpose, relationship, description  = getBaseContext(request_json.get('baseContext'))
+
+    number_of_questions = request_json.get(f'{game_type}Context').get('numberOfQuestions')
+    if number_of_questions > 20:
+        return {"message": "Too many questions requested"}, 400
+
+    db = get_db()
+    
+    num_questions_field = f'{game_type}.{game_type}Context.numberOfQuestions'
+    db["Users"].update_one({"_id": user_email},
+                                    {'$set': {
+                                        'baseContext': {
+                                            'purpose': purpose,
+                                            'relationship': relationship,
+                                            'description': description
+                                        },
+                                        num_questions_field: number_of_questions
+                                    }}, upsert=True
+                                )
+    return {"purpose": purpose, "relationship": relationship, "description": description,
+            "number_of_questions": number_of_questions}, 200
+
+async def get_questions(game_type):
+    user_info = await get_user_info()
+    if not checkResponseSuccess(user_info):
+        return user_info # will contain error and status message
+
+    user_email = user_info[0].get("email")
+
+    user = await get_db()['Users'].find_one({"_id": user_email})
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    questions = user[game_type]['questions']
+    if not questions:
+        return {"questions": []}, 200
+    return format_qns_for_fe(questions), 200
+

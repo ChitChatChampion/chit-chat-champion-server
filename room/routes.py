@@ -33,6 +33,9 @@ async def get_room(room_id):
     if game_type == 'csc' or 'bb':
         formatted_qns = format_qns_for_fe(room["questions"])
         return {"game_type": game_type, "questions": formatted_qns}, 200
+    elif game_type == 'quiz':
+        # likely different format of return with questions having solutions etc
+        return {"error": f"not yet implemented for {game_type}"}, 404
     else:
         return {"error": f"Unrecognised game type {game_type}"}, 404
         

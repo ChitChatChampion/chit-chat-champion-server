@@ -171,6 +171,21 @@ I receive:
 GET /bingo/context
 You receive:
 
+POST /bingo/<id>/generate
+You receive:
+{}
+I receive:
+201: {
+  "squares": [ { "description": "Obsessed with K-dramas and Gong Woo", "name": "Jonathan", "title": "K-drama Fanatic" }, { "description": "Enthusiastic about flying and making woosh sounds", "name": "Icarus \"Icky\" Iguana", "title": "Helicopter Gender" } ]
+}
+
+GET /bingo/<id>/squares
+You receive:
+{}
+I receive:
+200: {
+  "squares": [ { "description": "Obsessed with K-dramas and Gong Woo", "name": "Jonathan", "title": "K-drama Fanatic" }, { "description": "Enthusiastic about flying and making woosh sounds", "name": "Icarus \"Icky\" Iguana", "title": "Helicopter Gender" } ]
+}
 ```
 
 ### Quiz

@@ -156,3 +156,17 @@ async def delete_question(id, game_type):
         error_message = f"Error: {str(e)}"
         return jsonify({"message": error_message}), 500
 
+async def get_contexts(user_email, game_type):
+    if game_type not in ['csc', 'bb']:
+        logging.error(f"Invalid game type {game_type} in get_contexts")
+        return {"error": "Error"}, 400
+    db = get_db()
+    user = await db['Users'].find_one({'_id': user_email})
+    if not user:
+        logging.error(f"User {user_email} not found")
+        return {"error": "User not found"}, 404
+    return {
+        "baseContext": user["baseContext"],
+        f"{game_type}Context": user[game_type]["cscContext"],
+        "questions": format_qns_for_fe(user[game_type]["questions"])
+    }, 200

@@ -39,15 +39,14 @@ async def delete_csc_question(id):
 # Generated questions are added on to the user's existing questions
 @csc_questions_bp.route('/generate', methods=['POST'])
 async def ai_generate_csc_questions():
-    request_json = await request.json
     user_info = await get_user_info()
-    logging.error(user_info)
     if not checkResponseSuccess(user_info):
         logging.error("here User not found")
         return user_info # will contain error and status message
     user_email = user_info[0].get("email")
 
-    contexts_info = save_csc_contexts(user_email, request_json)
+    request_json = await request.json
+    contexts_info = save_contexts(user_email, request_json, 'csc')
     if not checkResponseSuccess(contexts_info):
         return contexts_info
     # generate questions
@@ -82,7 +81,3 @@ def craft_openai_csc_messages(contexts):
         {"role": "user", "content": prompt}
     ]
     return messages
-
-
-def save_csc_contexts(user_email, request_json):
-    return save_contexts(user_email, request_json, 'csc')

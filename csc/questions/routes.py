@@ -110,6 +110,7 @@ async def delete_csc_question(id):
 # This function is called when the user clicks the "Generate Questions" button
 # It saves the baseContext and cscContext in the database in the Users collection
 # It also generates the questions in the background and saves them in the database in the Users collection
+# Generated questions are added on to the user's existing questions
 @csc_questions_bp.route('/generate', methods=['POST'])
 async def ai_generate_csc_questions():
     request_json = await request.json
@@ -119,10 +120,14 @@ async def ai_generate_csc_questions():
         logging.error("here User not found")
         return user_info # will contain error and status message
     user_email = user_info[0].get("email")
+
     user = await get_db()['Users'].find_one({"_id": user_email})
     # add user to db if user does not exist
     if not user:
-        await get_db()['Users'].insert_one({"_id": user_email})
+        await get_db()['Users'].insert_one({"_id": user_email, 
+                                            'csc': {
+                                                'questions': {}
+                                            }})
 
     contexts_info = save_contexts(user_email, request_json)
     if not checkResponseSuccess(contexts_info):
@@ -166,6 +171,7 @@ def save_contexts(user_email, request_json):
         return {"message": "Too many questions requested"}, 400
 
     db = get_db()
+    
     db["Users"].update_one({"_id": user_email},
                                     {'$set': {
                                         'baseContext': {
@@ -173,11 +179,7 @@ def save_contexts(user_email, request_json):
                                             'relationship': relationship,
                                             'description': description
                                         },
-                                        'csc': {
-                                            'cscContext': {
-                                                'numberOfQuestions': number_of_questions
-                                            }
-                                        }
+                                        'csc.cscContext.numberOfQuestions': number_of_questions
                                     }}, upsert=True
                                 )
     return {"purpose": purpose, "relationship": relationship, "description": description,

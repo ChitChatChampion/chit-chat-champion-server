@@ -22,7 +22,7 @@ I receive:
       "description": "20-year-old singaporean university computing students who have no social life"
   },
   cscContext: {
-      "numberOfCards": 10
+      "numberOfQuestions": 10
   },
   questions: [{"id": 123, "What is your favorite food?"}, {"id:234, "What is your favorite icecream?"}]
 }
@@ -40,7 +40,7 @@ I receive:
       "description": "20-year-old singaporean university computing students who have no social life"
   },
   bbContext: {
-      "numberOfCards": 10
+      "numberOfQuestions": 10
   },
   questions: [{"id": 123, "content": "Who is more likely to burn down the computing building?"}, {"id": 123, "content": "Who is the most likely to use Haskel?"}]
 }
@@ -133,7 +133,7 @@ I receive:
       "description": "20-year-old singaporean university computing students who have no social life"
   },
   bbContext: {
-      "numberOfCards": 10
+      "numberOfQuestions": 10
   },
   questions: [{"id": 123, "What is your favorite food?"}, {"id:234, "What is your favorite icecream?"}]
 }
@@ -151,7 +151,7 @@ I receive:
       "description": "20-year-old singaporean university computing students who have no social life"
   },
   bbContext: {
-      "numberOfCards": 10
+      "numberOfQuestions": 10
   },
   questions: [{"id": 123, "content": "Who is more likely to burn down the computing building?"}, {"id": 123, "content": "Who is the most likely to use Haskel?"}]
 }
@@ -163,7 +163,7 @@ You receive:
 {}
 I receive:
 201: {
-      "id": 11357890,
+      "id": "asd",
 }
 400: { "error": "Haiya" }
 401: { "error": "Haiya" }
@@ -189,12 +189,12 @@ I receive:
 {
 questions: [
 {
-      "id": 11357891,
-      "text": "Who is more likely to burn down the computing building?"
+      "id": "abc",
+      "content": "Who is more likely to burn down the computing building?"
 },
 {
-      "id": 11357890,
-      "text": "Who is more likely to burn down the computing building?"
+      "id": "def",
+      "content": "Who is more likely to burn down the computing building?"
 }
 ]
 }
@@ -207,7 +207,7 @@ You receive:
 }
 I receive:
 201: {
-      "id": 11357890,
+      "id": "1av",
 }
 400: { "error": "Haiya" }
 401: { "error": "Haiya" }

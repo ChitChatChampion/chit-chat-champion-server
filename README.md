@@ -166,6 +166,13 @@ I receive:
 }
 ```
 
+### Bingo
+```
+GET /bingo/context
+You receive:
+
+```
+
 ### Quiz
 ```
 POST /room/quiz/create

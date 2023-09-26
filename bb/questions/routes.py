@@ -3,8 +3,10 @@ import prompts.prompts as prompts
 from database import check_db, get_db
 import logging
 from utils.user import get_user_info
-from utils.utils import checkResponseSuccess, getBaseContext, getBbContext, format_qns_for_fe
-from utils.questions import generate_unique_question_id, openai_generate_qns, add_questions_to_user_collection
+from utils.utils import checkResponseSuccess, format_qns_for_fe
+from utils.questions import openai_generate_qns, \
+    add_questions_to_user_collection, save_contexts, get_questions, update_question, \
+    create_question, delete_question
 
 bb_questions_bp = Blueprint('bb_questions_bp', __name__, url_prefix='/bb/questions')
 
@@ -17,95 +19,20 @@ async def check_database():
 
 @bb_questions_bp.route('/', methods=['GET'])
 async def get_bb_questions():
-    user_info = await get_user_info()
-    if not checkResponseSuccess(user_info):
-        return user_info # will contain error and status message
-
-    user_email = user_info[0].get("email")
-    # user_email = "user@example.com"
-
-    user = await get_db()['Users'].find_one({"_id": user_email})
-    if not user:
-        return jsonify({"error": "User not found"}), 404
-    questions = user['bb']['questions']
-    if not questions:
-        return {"questions": []}, 200
-    return format_qns_for_fe(questions), 200
+    return await get_questions('bb')
 
 
 @bb_questions_bp.route('/<id>', methods=['PUT'])
 async def update_bb_question(id):
-    request_data = await request.json
-    user_info = await get_user_info()
-    if not checkResponseSuccess(user_info):
-        return user_info # will contain error and status message
-    user_email = user_info[0].get("email")
-
-    content = request_data.get('content')
-
-    if not user_email:
-        return jsonify({"error": "Invalid user"}), 401
-
-    if not content:
-        return jsonify({"error": "No content data"}), 400
-
-    try:
-        user = await get_db()['Users'].find_one({"_id": user_email})
-        if not user:
-            return jsonify({"error": "User not found"}), 404
-        questions = user['bb']['questions']
-        questions[id] = content
-        await get_db()['Users'].update_one({"_id": user_email},
-                                           {'$set': {'bb.questions': questions}})
-
-        return jsonify({"id": id}), 200
-    except Exception as e:
-        error_message = f"Error: {str(e)}"
-        return jsonify({"message": error_message}), 500
+    return await update_question(id, 'bb')
 
 @bb_questions_bp.route('/create', methods=['POST'])
 async def create_bb_question():
-    user_info = await get_user_info()
-    if not checkResponseSuccess(user_info):
-        return user_info # will contain error and status message
-    user_email = user_info[0].get("email")
-
-    try:
-        user = await get_db()['Users'].find_one({"_id": user_email})
-        if not user:
-            return jsonify({"error": "User not found"}), 404
-        questions = user['bb']['questions']
-        # generate empty new question
-        question_id = generate_unique_question_id(questions)
-        questions[question_id] = ""
-        await get_db()['Users'].update_one({"_id": user_email},
-                                           {'$set': {'bb.questions': questions}})
-
-        return jsonify({"id": question_id}), 200
-    except Exception as e:
-        error_message = f"Error: {str(e)}"
-        return jsonify({"message": error_message}), 500
+    return await create_question('bb')
 
 @bb_questions_bp.route('/<id>', methods=['DELETE'])
 async def delete_bb_question(id):
-    user_info = await get_user_info()
-    if not checkResponseSuccess(user_info):
-        return user_info # will contain error and status message
-    user_email = user_info[0].get("email")
-
-    try:
-        user = await get_db()['Users'].find_one({"_id": user_email})
-        if not user:
-            return jsonify({"error": "User not found"}), 404
-        questions = user['bb']['questions']
-        del questions[id]
-        await get_db()['Users'].update_one({"_id": user_email}, {'$set': {'bb.questions': questions}})
-
-        return jsonify({"id": id}), 200
-    except Exception as e:
-        error_message = f"Error: {str(e)}"
-        logging.error(error_message)
-        return jsonify({"message": error_message}), 500
+    return await delete_question(id, 'bb')
     
 # This function is called when the user clicks the "Generate Questions" button
 # It saves the baseContext and bbContext in the database in the Users collection
@@ -139,6 +66,7 @@ async def ai_generate_bb_questions():
     logging.info({"questions": fe_formatted_questions})
     return {"questions": fe_formatted_questions}, 201
 
+
 def craft_openai_bb_messages(contexts):
     purpose = contexts.get("purpose")
     relationship = contexts.get("relationship")
@@ -161,22 +89,4 @@ def craft_openai_bb_messages(contexts):
 
 
 def save_bb_contexts(user_email, request_json):
-    purpose, relationship, description  = getBaseContext(request_json.get('baseContext'))
-    number_of_questions = getBbContext(request_json.get('bbContext'))
-    if number_of_questions > 20:
-        return {"message": "Too many questions requested"}, 400
-
-    db = get_db()
-    
-    db["Users"].update_one({"_id": user_email},
-                                    {'$set': {
-                                        'baseContext': {
-                                            'purpose': purpose,
-                                            'relationship': relationship,
-                                            'description': description
-                                        },
-                                        'bb.bbContext.numberOfQuestions': number_of_questions
-                                    }}, upsert=True
-                                )
-    return {"purpose": purpose, "relationship": relationship, "description": description,
-            "number_of_questions": number_of_questions}, 200
+    return save_contexts(user_email, request_json, 'bb')

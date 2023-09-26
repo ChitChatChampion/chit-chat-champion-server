@@ -3,7 +3,9 @@ from database import get_db
 import logging
 from nanoid import generate
 import openai
-from quart import current_app, jsonify
+from quart import current_app, jsonify, request
+from utils.user import get_user_info
+from utils.utils import getBaseContext, checkResponseSuccess, format_qns_for_fe
 
 def openai_generate_qns(user_email, messages):
     logging.info(f"{user_email}: Querying OpenAI")
@@ -17,7 +19,6 @@ def openai_generate_qns(user_email, messages):
     question_arr = parse_questions(questions)
 
     return question_arr
-
 
 def parse_questions(questions):
     if questions[0] == "[" and questions[-1] == "]":
@@ -56,40 +57,6 @@ def format_qns_for_db(existing_questions, ai_questions):
     logging.info(questions)
     return questions
 
-
-async def add_questions_to_room_collection(questions, room_id, game_type):
-    try:
-        await get_db()["Rooms"].insert_one({
-            '_id': room_id,
-            'game_type': game_type,
-            'is_published': False,
-            'questions': questions
-        })
-    except Exception as e:
-        logging.error(f"Error: {str(e)}")
-        return jsonify({"message": f"Error: adding questions to collection"}), 500
-
-async def generate_unique_room_id():
-    while True:
-        room_id = generate(size=6)
-        room = await get_db()["Rooms"].find_one({'_id': room_id})
-        if not room:
-            logging.info(f"Unique room {room_id} found")
-            break
-    return room_id
-
-async def set_room_published_status(room_id, set_is_published):
-    existing_room = await get_db()["Rooms"].find_one({"_id": room_id})
-    if not existing_room:
-        return {"error": "Room not found"}, 404
-
-    await get_db()["Rooms"].update_one({"_id": room_id},
-                                        {'$set': {
-                                        'is_published': set_is_published
-                                        }})
-    
-    return {"message": f"Room {room_id} {'published' if set_is_published else 'unpublished'} successfully"}
-
 def generate_unique_question_id(questions):
     question_id = generate(size=3)
     if not questions:
@@ -99,3 +66,118 @@ def generate_unique_question_id(questions):
             break
         question_id = generate(size=3)
     return question_id
+
+# assumes csc or bb game type; check if fields are different for quiz
+def save_contexts(user_email, request_json, game_type):
+    purpose, relationship, description  = getBaseContext(request_json.get('baseContext'))
+
+    number_of_questions = request_json.get(f'{game_type}Context').get('number_of_questions')
+    if number_of_questions > 20:
+        return {"message": "Too many questions requested"}, 400
+
+    db = get_db()
+    
+    num_questions_field = f'{game_type}.{game_type}Context.numberOfQuestions'
+    db["Users"].update_one({"_id": user_email},
+                                    {'$set': {
+                                        'baseContext': {
+                                            'purpose': purpose,
+                                            'relationship': relationship,
+                                            'description': description
+                                        },
+                                        num_questions_field: number_of_questions
+                                    }}, upsert=True
+                                )
+    return {"purpose": purpose, "relationship": relationship, "description": description,
+            "number_of_questions": number_of_questions}, 201
+
+async def get_questions(game_type):
+    user_info = await get_user_info()
+    if not checkResponseSuccess(user_info):
+        return user_info # will contain error and status message
+
+    user_email = user_info[0].get("email")
+
+    user = await get_db()['Users'].find_one({"_id": user_email})
+    if not user:
+        return jsonify({"error": "User not found"}), 404
+    questions = user[game_type]['questions']
+    if not questions:
+        return {"questions": []}, 200
+    return format_qns_for_fe(questions), 200
+
+async def update_question(id, game_type):
+    request_data = await request.json
+    user_info = await get_user_info()
+    if not checkResponseSuccess(user_info):
+        return user_info # will contain error and status message
+    user_email = user_info[0].get("email")
+
+    content = request_data.get('content')
+
+    if not user_email:
+        return jsonify({"error": "Invalid user"}), 401
+
+    if not content:
+        return jsonify({"error": "No content data"}), 400
+
+    try:
+        user = await get_db()['Users'].find_one({"_id": user_email})
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+        questions = user[game_type]['questions']
+        questions_field = f"{game_type}.questions"
+        questions[id] = content
+        await get_db()['Users'].update_one({"_id": user_email},
+                                           {'$set': {questions_field: questions}})
+
+        return jsonify({"id": id}), 200
+    except Exception as e:
+        error_message = f"Error: {str(e)}"
+        return jsonify({"message": error_message}), 500
+    
+async def create_question(game_type):
+    user_info = await get_user_info()
+    if not checkResponseSuccess(user_info):
+        return user_info # will contain error and status message
+    user_email = user_info[0].get("email")
+
+    try:
+        user = await get_db()['Users'].find_one({"_id": user_email})
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+        questions = user[game_type]['questions']
+        # generate empty new question
+        question_id = generate_unique_question_id(questions)
+        questions[question_id] = ""
+        questions_field = f"{game_type}.questions"
+        await get_db()['Users'].update_one({"_id": user_email},
+                                           {'$set': {questions_field: questions}})
+
+        return jsonify({"id": question_id}), 200
+    except Exception as e:
+        error_message = f"Error: {str(e)}"
+        return jsonify({"message": error_message}), 500
+    
+async def delete_question(id, game_type):
+    user_info = await get_user_info()
+    if not checkResponseSuccess(user_info):
+        return user_info # will contain error and status message
+    user_email = user_info[0].get("email")
+
+    try:
+        user = await get_db()['Users'].find_one({"_id": user_email})
+        if not user:
+            return jsonify({"error": "User not found"}), 404
+        questions = user[game_type]['questions']
+        del questions[id]
+
+        questions_field = f"{game_type}.questions"
+        await get_db()['Users'].update_one({"_id": user_email},
+                                           {'$set': {questions_field: questions}})
+
+        return jsonify({"id": id}), 200
+    except Exception as e:
+        error_message = f"Error: {str(e)}"
+        return jsonify({"message": error_message}), 500
+

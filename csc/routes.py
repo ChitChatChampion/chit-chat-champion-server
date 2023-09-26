@@ -9,7 +9,7 @@ csc_bp = Blueprint('csc_bp', __name__, url_prefix='/csc')
 # Get csc context from user whose access token is in response header
 @csc_bp.route('/context', methods=["GET"])
 async def get_csc_context():
-    user_info = get_user_info()
+    user_info = await get_user_info()
     if not checkResponseSuccess(user_info):
         return user_info # will contain error and status message
     user_email = user_info[0].get("email")
@@ -30,7 +30,7 @@ async def save_csc_context():
     request_json = await request.json
     purpose, relationship, description = getBaseContext(request_json.get('baseContext'))
     numberOfQuestions = getCscContext(request_json.get('cscContext')).get('numberOfQuestions')
-    user_info = get_user_info()
+    user_info = await get_user_info()
     if not checkResponseSuccess(user_info):
         return user_info # will contain error and status message
     user_email = user_info[0].get("email")

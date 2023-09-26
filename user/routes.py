@@ -15,5 +15,5 @@ user_bp = Blueprint('user_bp', __name__, url_prefix='/user')
 # }
 # Test route
 @user_bp.route("/", methods=["POST"])
-def get_user_info_test():
-    return get_user_info()
+async def get_user_info_test():
+    return await get_user_info()

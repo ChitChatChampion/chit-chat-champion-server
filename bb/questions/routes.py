@@ -4,10 +4,9 @@ from database import check_db, get_db
 import logging
 from utils.user import get_user_info
 from utils.utils import checkResponseSuccess, getBaseContext, getBbContext, format_qns_for_fe
-from utils.questions import generate_unique_question_id, openai_generate_and_save_qns
+from utils.questions import generate_unique_question_id, openai_generate_qns, add_questions_to_user_collection
 
 bb_questions_bp = Blueprint('bb_questions_bp', __name__, url_prefix='/bb/questions')
-
 
 # FOR TESTING PURPOSES ONLY
 # Define a route to check if the database is accessible
@@ -18,7 +17,7 @@ async def check_database():
 
 @bb_questions_bp.route('/', methods=['GET'])
 async def get_bb_questions():
-    user_info = get_user_info()
+    user_info = await get_user_info()
     if not checkResponseSuccess(user_info):
         return user_info # will contain error and status message
 
@@ -37,7 +36,7 @@ async def get_bb_questions():
 @bb_questions_bp.route('/<id>', methods=['PUT'])
 async def update_bb_question(id):
     request_data = await request.json
-    user_info = get_user_info()
+    user_info = await get_user_info()
     if not checkResponseSuccess(user_info):
         return user_info # will contain error and status message
     user_email = user_info[0].get("email")
@@ -66,7 +65,7 @@ async def update_bb_question(id):
 
 @bb_questions_bp.route('/create', methods=['POST'])
 async def create_bb_question():
-    user_info = get_user_info()
+    user_info = await get_user_info()
     if not checkResponseSuccess(user_info):
         return user_info # will contain error and status message
     user_email = user_info[0].get("email")
@@ -89,7 +88,7 @@ async def create_bb_question():
 
 @bb_questions_bp.route('/<id>', methods=['DELETE'])
 async def delete_bb_question(id):
-    user_info = get_user_info()
+    user_info = await get_user_info()
     if not checkResponseSuccess(user_info):
         return user_info # will contain error and status message
     user_email = user_info[0].get("email")
@@ -105,6 +104,7 @@ async def delete_bb_question(id):
         return jsonify({"id": id}), 200
     except Exception as e:
         error_message = f"Error: {str(e)}"
+        logging.error(error_message)
         return jsonify({"message": error_message}), 500
     
 # This function is called when the user clicks the "Generate Questions" button
@@ -114,32 +114,26 @@ async def delete_bb_question(id):
 @bb_questions_bp.route('/generate', methods=['POST'])
 async def ai_generate_bb_questions():
     request_json = await request.json
-    user_info = get_user_info()
+    user_info = await get_user_info()
     logging.error(user_info)
     if not checkResponseSuccess(user_info):
         logging.error("here User not found")
         return user_info # will contain error and status message
     user_email = user_info[0].get("email")
 
-    user = await get_db()['Users'].find_one({"_id": user_email})
-    # add user to db if user does not exist
-    if not user:
-        await get_db()['Users'].insert_one({"_id": user_email, 
-                                            'bb': {
-                                                'questions': {}
-                                            }})
-
     contexts_info = save_bb_contexts(user_email, request_json)
     if not checkResponseSuccess(contexts_info):
         return contexts_info
-
     # generate questions
     messages = craft_openai_bb_messages(contexts_info[0])
 
-    openai_returned = await openai_generate_and_save_qns(user_email, messages)
-    if not checkResponseSuccess(openai_returned):
-        return openai_returned
-    db_formatted_questions = openai_returned[0]
+    question_arr = openai_generate_qns(user_email, messages)
+
+    db_response = await add_questions_to_user_collection(question_arr, user_email, 'bb')
+    if not checkResponseSuccess(db_response):
+        return db_response
+
+    db_formatted_questions = db_response[0]
     fe_formatted_questions = format_qns_for_fe(db_formatted_questions)
 
     logging.info({"questions": fe_formatted_questions})
@@ -153,7 +147,7 @@ def craft_openai_bb_messages(contexts):
 
     prompt = f"The participants are in this game are {relationship}, and the purpose of the game is for a {purpose}. \
         Other information about the participants is that: {description}. \
-        I want you to generate questions where the answer must be one of the players \
+        I want you to generate questions where playeres must choose someone in the game \
         and players would not want to be chosen. \
         The number of questions I want you to generate is {number_of_questions}."
 

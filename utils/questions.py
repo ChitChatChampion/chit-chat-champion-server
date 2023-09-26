@@ -5,7 +5,7 @@ from nanoid import generate
 import openai
 from quart import current_app, jsonify
 
-async def openai_generate_and_save_qns(user_email, messages):
+def openai_generate_qns(user_email, messages):
     logging.info(f"{user_email}: Querying OpenAI")
     response = openai.ChatCompletion.create(
         model=current_app.config['MODEL'],
@@ -16,28 +16,31 @@ async def openai_generate_and_save_qns(user_email, messages):
 
     question_arr = parse_questions(questions)
 
-    db_response = await add_questions_to_user_csc_collection(question_arr, user_email)
+    return question_arr
 
-    return db_response
 
 def parse_questions(questions):
     if questions[0] == "[" and questions[-1] == "]":
         # This may be dangerous in the case of prompt injection
         return literal_eval(questions)
     else:
+        # We want to remove the quotation marks for a single question
+        if questions[0] == "\"" and questions[-1] == "\"":
+            questions = questions[1:-1]
         return [questions]
 
-async def add_questions_to_user_csc_collection(ai_questions_arr, user_email):
+async def add_questions_to_user_collection(ai_questions_arr, user_email, game_type):
     try:
         logging.info(f"{user_email}: Adding questions to collection")
         user = await get_db()["Users"].find_one({"_id": user_email})
 
-        existing_questions = user["csc"]["questions"]
-
+        existing_questions = user[game_type]["questions"]
         formatted_questions = format_qns_for_db(existing_questions, ai_questions_arr)
+
+        field_to_add = f"{game_type}.questions"
         await get_db()["Users"].update_one({"_id": user_email},
                                         {'$set': {
-                                            'csc.questions': formatted_questions,
+                                            field_to_add: formatted_questions
                                         }})
         return formatted_questions, 201
     except Exception as e:

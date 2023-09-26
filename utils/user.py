@@ -12,27 +12,33 @@ async def signup_user(user_info):
     name = user.get("name")
     db = get_db()
     # if user with email does not exist, add user to db
-    if not await db["Users"].find_one({"_id": email}):
-        await db["Users"].insert_one({
-            '_id': email,
-            'name': name,
-            'baseContext': {},
-            'bb': {
-                'bbContext': {},
-                'questions': {}
-            },
-            'csc': {
-                'cscContext': {},
-                'questions': {}
-            },
-            'quiz': {
-                'quizContext': {},
-                'questions': {}
-            }
-        })
-        logging.info(f"Added user {email} to database")
+    try:
+        if not await db["Users"].find_one({"_id": email}):
+            await db["Users"].insert_one({
+                '_id': email,
+                'name': name,
+                'baseContext': {},
+                'bb': {
+                    'bbContext': {},
+                    'questions': {}
+                },
+                'csc': {
+                    'cscContext': {},
+                    'questions': {}
+                },
+                'quiz': {
+                    'quizContext': {},
+                    'questions': {}
+                }
+            })
+            logging.info(f"Added user {email} to database")
+        else:
+            logging.info("User already exists in database")
+    except Exception as e:
+        logging.error(e)
+        return jsonify({"error": str(e)}), 500
 
-def get_user_info():
+async def get_user_info():
     # Get the access token from the request headers
     # logging.error(request.headers)
     access_token =  request.headers.get("Access-Token")
@@ -55,6 +61,8 @@ def get_user_info():
             user_info = response.json()
             name = user_info.get("name")
             email = user_info.get("email")
+            await signup_user(user_info)
+            logging.info("Successfully fetched user info")
             return {"status": "success", "name": name, "email": email}, response.status_code
         else:
             return jsonify({"error": "Failed to fetch user info"}), response.status_code

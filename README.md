@@ -155,13 +155,104 @@ DELETE /bb/questions/:id
 You receive:
 {}
 I receive:
-201: {}
+200: {}
 
-POST /room/b/create
+POST /room/bb/create
 You receive:
 {}
 I receive:
 200: {
   "id": "ABGED"
 }
+```
+
+### Quiz
+```
+POST /room/quiz/create
+You receive:
+{}
+I receive:
+201: {
+  "id": 123413534253
+}
+
+GET /quiz/:room_id/context
+You receive:
+{}
+I receive:
+200: {
+  "baseContext": {
+    "purpose": "first date",
+    "relationship": "acquaintances",
+    "description": "20-year-old singaporean university computing students who have no social life"
+  },
+  "quizContext": {
+    "numberOfQuestions": 10
+  }
+}
+
+POST /quiz/:room_id/questions/generate
+You receive:
+{
+  "baseContext": {
+    "purpose": "first date",
+    "relationship": "acquaintances",
+    "description": "20-year-old singaporean university computing students who have no social life"
+  },
+  "quizContext": {
+    "numberOfQuestions": 10
+  }
+}
+I receive:
+201: {
+  "questions": [
+    {
+      "id": 123,
+      "content": "Who has burned down the computing building?",
+      "options": [
+        "Jason", // First option is always the correct one
+        "Jason",
+        "Jason",
+        "Jason"
+      ]
+    },
+  ]
+}
+
+POST /quiz/:room_id/questions/create
+You receive:
+{}
+I receive:
+200: {
+  "id": 11357890,
+}
+
+PUT /quiz/:room_id/questions/:id
+You receive:
+{
+  "content": "Who is more likely to burn down the computing building?"
+}
+I receive:
+200: {}
+
+DELETE /quiz/:room_id/questions/:id
+You receive:
+{}
+I receive:
+200: {}
+
+POST /quiz/:room_id/join
+You receive:
+{
+  "name": "Jason",
+  "information": "I am a mega-brained individual"
+}
+I receive:
+200: {}
+
+POST /quiz/:room_id/start
+You receive:
+{}
+I receive:
+200: {}
 ```

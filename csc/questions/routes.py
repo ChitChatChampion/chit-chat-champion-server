@@ -4,8 +4,8 @@ from database import check_db, get_db
 import logging
 from utils.user import get_user_info
 from utils.utils import checkResponseSuccess, format_qns_for_fe
-from utils.questions import generate_unique_question_id, openai_generate_qns, \
-    add_questions_to_user_collection, save_contexts, get_questions
+from utils.questions import openai_generate_qns, add_questions_to_user_collection, save_contexts, \
+    get_questions, update_question, create_question, delete_question
 
 csc_questions_bp = Blueprint('csc_questions_bp', __name__, url_prefix='/csc/questions')
 
@@ -23,76 +23,15 @@ async def get_csc_questions():
 
 @csc_questions_bp.route('/<id>', methods=['PUT'])
 async def update_csc_question(id):
-    request_data = await request.json
-    user_info = await get_user_info()
-    if not checkResponseSuccess(user_info):
-        return user_info # will contain error and status message
-    user_email = user_info[0].get("email")
-
-    content = request_data.get('content')
-
-    if not user_email:
-        return jsonify({"error": "Invalid user"}), 401
-
-    if not content:
-        return jsonify({"error": "No content data"}), 400
-
-    try:
-        user = await get_db()['Users'].find_one({"_id": user_email})
-        if not user:
-            return jsonify({"error": "User not found"}), 404
-        questions = user['csc']['questions']
-        questions[id] = content
-        await get_db()['Users'].update_one({"_id": user_email},
-                                           {'$set': {'csc.questions': questions}})
-
-        return jsonify({"id": id}), 200
-    except Exception as e:
-        error_message = f"Error: {str(e)}"
-        return jsonify({"message": error_message}), 500
+    return await update_question(id, 'csc')
 
 @csc_questions_bp.route('/create', methods=['POST'])
 async def create_csc_question():
-    user_info = await get_user_info()
-    if not checkResponseSuccess(user_info):
-        return user_info # will contain error and status message
-    user_email = user_info[0].get("email")
-
-    try:
-        user = await get_db()['Users'].find_one({"_id": user_email})
-        if not user:
-            return jsonify({"error": "User not found"}), 404
-        questions = user['csc']['questions']
-        # generate empty new question
-        question_id = generate_unique_question_id(questions)
-        questions[question_id] = ""
-        await get_db()['Users'].update_one({"_id": user_email},
-                                           {'$set': {'csc.questions': questions}})
-
-        return jsonify({"id": question_id}), 200
-    except Exception as e:
-        error_message = f"Error: {str(e)}"
-        return jsonify({"message": error_message}), 500
+    return await create_question('csc')
 
 @csc_questions_bp.route('/<id>', methods=['DELETE'])
 async def delete_csc_question(id):
-    user_info = await get_user_info()
-    if not checkResponseSuccess(user_info):
-        return user_info # will contain error and status message
-    user_email = user_info[0].get("email")
-
-    try:
-        user = await get_db()['Users'].find_one({"_id": user_email})
-        if not user:
-            return jsonify({"error": "User not found"}), 404
-        questions = user['csc']['questions']
-        del questions[id]
-        await get_db()['Users'].update_one({"_id": user_email}, {'$set': {'csc.questions': questions}})
-
-        return jsonify({"id": id}), 200
-    except Exception as e:
-        error_message = f"Error: {str(e)}"
-        return jsonify({"message": error_message}), 500
+    return await delete_question(id, 'csc')
     
 # This function is called when the user clicks the "Generate Questions" button
 # It saves the baseContext and cscContext in the database in the Users collection

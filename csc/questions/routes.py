@@ -4,7 +4,7 @@ from database import check_db, get_db
 import logging
 from utils.user import get_user_info
 from utils.utils import checkResponseSuccess, getBaseContext, getCscContext, format_qns_for_fe
-from utils.questions import generate_unique_question_id, openai_generate_and_save_qns
+from utils.questions import generate_unique_question_id, openai_generate_qns, add_questions_to_user_collection
 
 csc_questions_bp = Blueprint('csc_questions_bp', __name__, url_prefix='/csc/questions')
 
@@ -121,25 +121,19 @@ async def ai_generate_csc_questions():
         return user_info # will contain error and status message
     user_email = user_info[0].get("email")
 
-    user = await get_db()['Users'].find_one({"_id": user_email})
-    # add user to db if user does not exist
-    if not user:
-        await get_db()['Users'].insert_one({"_id": user_email, 
-                                            'csc': {
-                                                'questions': {}
-                                            }})
-
     contexts_info = save_csc_contexts(user_email, request_json)
     if not checkResponseSuccess(contexts_info):
         return contexts_info
-
     # generate questions
     messages = craft_openai_csc_messages(contexts_info[0])
 
-    openai_returned = await openai_generate_and_save_qns(user_email, messages)
-    if not checkResponseSuccess(openai_returned):
-        return openai_returned
-    db_formatted_questions = openai_returned[0]
+    question_arr = openai_generate_qns(user_email, messages)
+
+    db_response = await add_questions_to_user_collection(question_arr, user_email, 'csc')
+    if not checkResponseSuccess(db_response):
+        return db_response
+
+    db_formatted_questions = db_response[0]
     fe_formatted_questions = format_qns_for_fe(db_formatted_questions)
 
     logging.info({"questions": fe_formatted_questions})

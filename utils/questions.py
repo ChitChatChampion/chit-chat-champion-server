@@ -5,6 +5,9 @@ from quart import jsonify, request
 from utils.user import get_user_info
 from utils.utils import getBaseContext, checkResponseSuccess, format_qns_for_fe
 
+MIN_INPUT_PROMPT_LENGTH = 3
+MAX__INPUT_PROMPT_LENGTH = 20
+
 async def add_questions_to_user_collection(ai_questions_arr, user_email, game_type):
     try:
         logging.info(f"{user_email}: Adding questions to collection")
@@ -44,9 +47,18 @@ def generate_unique_question_id(questions):
 
 # assumes csc or bb game type; check if fields are different for quiz
 def save_contexts(user_email, request_json, game_type):
+    baseContext = request_json.get('baseContext')
+    if not baseContext:
+        return {"message": "No baseContext data"}, 400
+    
     purpose, relationship, description  = getBaseContext(request_json.get('baseContext'))
 
+    if not MIN_INPUT_PROMPT_LENGTH <= len(purpose) <= MAX__INPUT_PROMPT_LENGTH or \
+        not MIN_INPUT_PROMPT_LENGTH <= len(description) <= MAX__INPUT_PROMPT_LENGTH:
+        return {"message": "Invalid input prompt length"}, 400
+
     number_of_questions = request_json.get(f'{game_type}Context').get('number_of_questions')
+
     if number_of_questions > 20:
         return {"message": "Too many questions requested"}, 400
 
@@ -75,7 +87,7 @@ async def get_questions(game_type):
 
     user = await get_db()['Users'].find_one({"_id": user_email})
     if not user:
-        return jsonify({"error": "User not found"}), 404
+        return jsonify({"message": "User not found"}), 404
     questions = user[game_type]['questions']
     if not questions:
         return {"questions": []}, 200
@@ -91,15 +103,15 @@ async def update_question(id, game_type):
     content = request_data.get('content')
 
     if not user_email:
-        return jsonify({"error": "Invalid user"}), 401
+        return jsonify({"message": "Invalid user"}), 401
 
     if not content:
-        return jsonify({"error": "No content data"}), 400
+        return jsonify({"message": "No content data"}), 400
 
     try:
         user = await get_db()['Users'].find_one({"_id": user_email})
         if not user:
-            return jsonify({"error": "User not found"}), 404
+            return jsonify({"message": "User not found"}), 404
         questions = user[game_type]['questions']
         questions_field = f"{game_type}.questions"
         questions[id] = content
@@ -120,7 +132,7 @@ async def create_question(game_type):
     try:
         user = await get_db()['Users'].find_one({"_id": user_email})
         if not user:
-            return jsonify({"error": "User not found"}), 404
+            return jsonify({"message": "User not found"}), 404
         questions = user[game_type]['questions']
         # generate empty new question
         question_id = generate_unique_question_id(questions)
@@ -143,7 +155,7 @@ async def delete_question(id, game_type):
     try:
         user = await get_db()['Users'].find_one({"_id": user_email})
         if not user:
-            return jsonify({"error": "User not found"}), 404
+            return jsonify({"message": "User not found"}), 404
         questions = user[game_type]['questions']
         del questions[id]
 
@@ -159,12 +171,12 @@ async def delete_question(id, game_type):
 async def get_contexts(user_email, game_type):
     if game_type not in ['csc', 'bb']:
         logging.error(f"Invalid game type {game_type} in get_contexts")
-        return {"error": "Error"}, 400
+        return {"message": "message"}, 400
     db = get_db()
     user = await db['Users'].find_one({'_id': user_email})
     if not user:
         logging.error(f"User {user_email} not found")
-        return {"error": "User not found"}, 404
+        return {"message": "User not found"}, 404
     gameContext = f"{game_type}Context"
     return {
         "baseContext": user["baseContext"],

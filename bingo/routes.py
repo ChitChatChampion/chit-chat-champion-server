@@ -28,7 +28,8 @@ async def ai_generate_bingo_squares(id):
     player_contexts = get_bingo_player_contexts(bingo_room)
     messages = craft_openai_bingo_messages(player_contexts)
 
-    bingo_squares_arr = openai_generate_response(user_email, messages)
+    bingo_squares_arr, message = openai_generate_response(user_email, messages)
+
     logging.info(f"{user_email}: OpenAI response: {bingo_squares_arr}")
 
     await get_db()['Rooms'].update_one({"_id": id},
@@ -40,9 +41,9 @@ async def ai_generate_bingo_squares(id):
 
 def check_bingo_room(bingo_room):
     if not bingo_room or not bingo_room['game_type'] == 'bingo':
-        return {"error": "Room not found"}, 404
+        return {"message": "Room not found"}, 404
     if not bingo_room['bingo'] or not bingo_room['bingo']['players']:
-        return {"error": "No players found"}, 404
+        return {"message": "No players found"}, 404
     return {"message": "Success"}, 200
 
 def get_bingo_player_contexts(bingo_room):

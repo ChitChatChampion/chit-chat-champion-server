@@ -26,8 +26,8 @@ async def signup_user(user_info):
                     'cscContext': {},
                     'questions': {}
                 },
-                'quiz': {
-                    'quizContext': {},
+                'bingo': {
+                    'bingoContext': {},
                     'questions': {}
                 }
             })
@@ -36,7 +36,7 @@ async def signup_user(user_info):
             logging.info("User already exists in database")
     except Exception as e:
         logging.error(e)
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"message": "Error trying to verify user"}), 500
 
 async def get_user_info():
     # Get the access token from the request headers
@@ -45,7 +45,7 @@ async def get_user_info():
 
     if not access_token:
         logging.error("Access token missing")
-        return jsonify({"error": "Access token missing"}), 401
+        return jsonify({"message": "Access token missing"}), 401
 
     # Set up headers for the userinfo request
     headers = {
@@ -65,7 +65,7 @@ async def get_user_info():
             logging.info("Successfully fetched user info")
             return {"status": "success", "name": name, "email": email}, response.status_code
         else:
-            return jsonify({"error": "Failed to fetch user info"}), response.status_code
+            return jsonify({"message": "Access token expired"}), response.status_code
     except Exception as e:
         logging.error(e)
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"message": "Error trying to verify user"}), 500

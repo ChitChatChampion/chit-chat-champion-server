@@ -11,6 +11,18 @@
 
 ## TRADE DEAL
 
+### User
+```
+Checks if you're the owner of the room
+GET /user/room/:id
+You receive:
+{}
+I receive:
+200: {
+  is_owner: True
+}
+```
+
 ### Room
 ```
 GET /room/:id

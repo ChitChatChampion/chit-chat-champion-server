@@ -182,8 +182,99 @@ I receive:
 ```
 GET /bingo/context
 You receive:
+{}
+I receive:
+200: {
+  "fields": [
+    {"id": 1234165341, "content": "Gender"},
+    {"id": 1237890452, "content": "Favourite brand of chocolate"}
+  ]
+}
 
-POST /bingo/<id>/generate
+POST /bingo/fields/create
+Description:
+Should function the same as csc/questions/create
+You receive:
+{}
+I receive:
+{
+  "id": 1237849
+}
+
+PUT /bingo/fields/:id
+You receive:
+{
+  "content": "Favourite colour"
+}
+I receive:
+200: {}
+
+DELETE /bingo/fields/:id
+You receive:
+{}
+I receive:
+200: {}
+
+POST /room/bingo/create
+Description:
+Creates a game room, but don't have the questions yet.
+You receive:
+{
+  "fields": [
+    {"id": 1234165341, "content": "Gender"},
+    {"id": 1237890452, "content": "Favourite brand of chocolate"}
+  ]
+}
+I receive:
+200: {
+  "id": 12358934
+}
+
+GET /bingo/:id/fields
+Description:
+Gets the fields for the players to fill in.
+You receive:
+{}
+I receive:
+200: {
+  "fields": [
+    {"id": 1234165341, "content": "Gender"},
+    {"id": 1237890452, "content": "Favourite brand of chocolate"}
+  ]
+}
+
+POST /bingo/:id/join
+Description:
+Players submit their form which should contain their personal information. Everything in "data" is meant to be pushed wholesale into ChatGPT. Other information is always a field.
+Guarantees:
+Length of each field doesn't exceed X characters.
+You receive:
+{
+  "name": "Clement Tee",
+  "data": {
+    "Gender": "Apache Attack Helicopter",
+    "Favourite Colour": "Oil"
+  },
+  "other_information": "I like to eat cheese"
+}
+I receive:
+200: {}
+
+POST /bingo/:id/players
+Description:
+Get a list of people who have submitted a form. Should only return if you are the owner.
+You receive:
+{}
+I receive:
+200: {
+  "players": [
+    {"name": "Amirah Tan"},
+    {"name": "Nicholas Tan Bin"},
+    {"name": "Nicole Hai Wei Ting"}
+  ]
+}
+
+POST /bingo/:id/generate
 You receive:
 {}
 I receive:
@@ -191,12 +282,51 @@ I receive:
   "squares": [ { "description": "Obsessed with K-dramas and Gong Woo", "name": "Jonathan", "title": "K-drama Fanatic" }, { "description": "Enthusiastic about flying and making woosh sounds", "name": "Icarus \"Icky\" Iguana", "title": "Helicopter Gender" } ]
 }
 
-GET /bingo/<id>/squares
+GET /bingo/:id
+Description:
+A bunch of boolean checks. Refer to slide 4 of https://jamboard.google.com/d/12MSzDJFqMhkudXLiaPwagLfFOeWUaTKtW5S2eAtJKyo/viewer?pli=1&mtt=oy63w2r8f9f&f=3
+You receive:
+{}
+I receive:
+200: {
+  "isOwner": true,
+  "hasStarted": false,
+  "hasSubmitted": false
+}
+
+GET /bingo/:id/squares
 You receive:
 {}
 I receive:
 200: {
   "squares": [ { "description": "Obsessed with K-dramas and Gong Woo", "name": "Jonathan", "title": "K-drama Fanatic" }, { "description": "Enthusiastic about flying and making woosh sounds", "name": "Icarus \"Icky\" Iguana", "title": "Helicopter Gender" } ]
+}
+
+POST /bingo/:id/submit
+Description:
+The player submits what they currently have.
+You receive:
+{
+  "name": "Linus Richards",
+  "score": 2,
+  "total_score": 10,
+  "timestamp": 1238491346790826854
+}
+I receive:
+200: {}
+
+GET /bingo/:id/leaderboard
+Description:
+Host presses a button that shows top 3 people, with time as tie-breaker.
+You receive:
+{}
+I receive:
+200: {
+  "players": [
+    {"name": "George Richards", "score": 4},
+    {"name": "Ang Mei Hua", "score": 4},
+    {"name": "Wu Si Ling", "score": 3}
+  ]
 }
 ```
 

@@ -4,7 +4,7 @@ from database import check_db
 import logging
 from utils.user import authenticate
 from utils.utils import checkResponseSuccess, format_entities_for_fe, openai_generate_response
-from utils.questions import add_questions_to_user_collection, save_bb_csc_contexts, \
+from utils.entities import add_questions_to_user_collection, save_bb_csc_contexts, \
     get_entities, update_entity, create_entity, delete_entity
 
 bb_questions_bp = Blueprint('bb_questions_bp', __name__, url_prefix='/bb/questions')

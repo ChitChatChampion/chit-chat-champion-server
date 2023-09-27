@@ -1,7 +1,7 @@
 from quart import Blueprint, request
 import prompts.prompts as prompts
 from utils.user import authenticate
-from utils.questions import save_bb_csc_contexts, get_questions_contexts
+from utils.entities import save_bb_csc_contexts, get_questions_contexts
 
 csc_bp = Blueprint('csc_bp', __name__, url_prefix='/csc')
 

@@ -226,3 +226,21 @@ def get_players_without_timestamp(players):
         players_without_timestamp.append({"position": index, "name": player['name'],
                                           "score": player['score']})
     return players_without_timestamp
+
+@bingo_bp.route('/<id>/start', methods=['POST'])
+@authenticate
+async def start_bingo_game(id, user_info):
+    user_email = user_info.get('email')
+    room = await get_db()['Rooms'].find_one({'_id': id})
+    if not room or not check_is_bingo_room(room):
+        return {"message": "Room not found"}, 404
+    if not check_is_room_owner(room, user_email):
+        return {"message": "Authentication error"}, 401
+
+    if room['bingo']['has_started']:
+        return {"message": "Game has already started"}, 400
+    await get_db()['Rooms'].update_one({"_id": id},
+                                        {'$set': {
+                                            'bingo.has_started': True
+                                        }})
+    return {"message": "success"}, 200

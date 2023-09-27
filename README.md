@@ -240,7 +240,7 @@ I receive:
 
 POST /bingo/:id/join
 Description:
-Players submit their form which should contain their personal information. Everything in "data" is meant to be pushed wholesale into ChatGPT.
+Players submit their form which should contain their personal information. Everything in "data" is meant to be pushed wholesale into ChatGPT. Other information is always a field.
 Guarantees:
 Length of each field doesn't exceed X characters.
 You receive:
@@ -249,7 +249,8 @@ You receive:
   "data": {
     "Gender": "Apache Attack Helicopter",
     "Favourite Colour": "Oil"
-  }
+  },
+  "other_information": "I like to eat cheese"
 }
 I receive:
 200: {}

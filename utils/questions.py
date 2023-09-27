@@ -87,7 +87,7 @@ async def get_questions(game_type):
 
     user = await get_db()['Users'].find_one({"_id": user_email})
     if not user:
-        return jsonify({"error": "User not found"}), 404
+        return jsonify({"message": "User not found"}), 404
     questions = user[game_type]['questions']
     if not questions:
         return {"questions": []}, 200
@@ -103,15 +103,15 @@ async def update_question(id, game_type):
     content = request_data.get('content')
 
     if not user_email:
-        return jsonify({"error": "Invalid user"}), 401
+        return jsonify({"message": "Invalid user"}), 401
 
     if not content:
-        return jsonify({"error": "No content data"}), 400
+        return jsonify({"message": "No content data"}), 400
 
     try:
         user = await get_db()['Users'].find_one({"_id": user_email})
         if not user:
-            return jsonify({"error": "User not found"}), 404
+            return jsonify({"message": "User not found"}), 404
         questions = user[game_type]['questions']
         questions_field = f"{game_type}.questions"
         questions[id] = content
@@ -132,7 +132,7 @@ async def create_question(game_type):
     try:
         user = await get_db()['Users'].find_one({"_id": user_email})
         if not user:
-            return jsonify({"error": "User not found"}), 404
+            return jsonify({"message": "User not found"}), 404
         questions = user[game_type]['questions']
         # generate empty new question
         question_id = generate_unique_question_id(questions)
@@ -155,7 +155,7 @@ async def delete_question(id, game_type):
     try:
         user = await get_db()['Users'].find_one({"_id": user_email})
         if not user:
-            return jsonify({"error": "User not found"}), 404
+            return jsonify({"message": "User not found"}), 404
         questions = user[game_type]['questions']
         del questions[id]
 
@@ -171,12 +171,12 @@ async def delete_question(id, game_type):
 async def get_contexts(user_email, game_type):
     if game_type not in ['csc', 'bb']:
         logging.error(f"Invalid game type {game_type} in get_contexts")
-        return {"error": "Error"}, 400
+        return {"message": "message"}, 400
     db = get_db()
     user = await db['Users'].find_one({'_id': user_email})
     if not user:
         logging.error(f"User {user_email} not found")
-        return {"error": "User not found"}, 404
+        return {"message": "User not found"}, 404
     gameContext = f"{game_type}Context"
     return {
         "baseContext": user["baseContext"],

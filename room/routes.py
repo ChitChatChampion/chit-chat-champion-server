@@ -1,9 +1,8 @@
 from quart import Blueprint, request
 import prompts.prompts as prompts
 from database import get_db
-import logging
 from utils.utils import checkResponseSuccess, format_qns_for_fe
-from utils.user import get_user_info
+from utils.user import authenticate
 from utils.room import create_room, set_room_published_status
 
 
@@ -11,12 +10,14 @@ room_bp = Blueprint('room_bp', __name__, url_prefix='/room')
 
 # Creates a CSC room with the user's questions
 @room_bp.route('/csc/create', methods=["POST"])
-async def create_csc_room():
-    return await create_room('csc')
+@authenticate
+async def create_csc_room(user_info):
+    return await create_room(user_info, 'csc')
 
 @room_bp.route('/bb/create', methods=["POST"])
-async def create_bb_room():
-    return await create_room('bb')
+@authenticate
+async def create_bb_room(user_info):
+    return await create_room(user_info, 'bb')
 
 # GET
 # /room/:id
@@ -42,14 +43,12 @@ async def get_room(room_id):
 
 # create room: POST /room/publish, return success/failure
 @room_bp.route('/publish', methods=["POST"])
-async def publish_room():
+@authenticate
+async def publish_room(user_info):
     request_json = await request.json
     room_id = request_json.get('room_id')
 
-    user_info = await get_user_info()
-    if not checkResponseSuccess(user_info):
-        return user_info
-    user_email = user_info[0].get("email")
+    user_email = user_info.get("email")
 
     updated_result = await update_room_before_publish(user_email, room_id)
     if not checkResponseSuccess(updated_result):

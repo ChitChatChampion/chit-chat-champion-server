@@ -1,13 +1,14 @@
-from quart import Blueprint, request, jsonify
+from quart import Blueprint, request
 import prompts.prompts as prompts
-from database import check_db, get_db
+from database import check_db
 import logging
-from utils.user import get_user_info
+from utils.user import authenticate
 from utils.utils import checkResponseSuccess, format_qns_for_fe, openai_generate_response
 from utils.questions import add_questions_to_user_collection, save_contexts, \
     get_questions, update_question, create_question, delete_question
 
 bb_questions_bp = Blueprint('bb_questions_bp', __name__, url_prefix='/bb/questions')
+
 
 # FOR TESTING PURPOSES ONLY
 # Define a route to check if the database is accessible
@@ -17,39 +18,38 @@ async def check_database():
     return res
 
 @bb_questions_bp.route('/', methods=['GET'])
-async def get_bb_questions():
-    return await get_questions('bb')
-
+@authenticate
+async def get_bb_questions(user_info):
+    return await get_questions(user_info, 'bb')
 
 @bb_questions_bp.route('/<id>', methods=['PUT'])
-async def update_bb_question(id):
-    return await update_question(id, 'bb')
+@authenticate
+async def update_bb_question(id, user_info):
+    return await update_question(id, user_info, 'bb')
 
 @bb_questions_bp.route('/create', methods=['POST'])
-async def create_bb_question():
-    return await create_question('bb')
+@authenticate
+async def create_bb_question(user_info):
+    return await create_question(user_info, 'bb')
 
 @bb_questions_bp.route('/<id>', methods=['DELETE'])
-async def delete_bb_question(id):
-    return await delete_question(id, 'bb')
+@authenticate
+async def delete_bb_question(id, user_info):
+    return await delete_question(id, user_info, 'bb')
     
 # This function is called when the user clicks the "Generate Questions" button
 # It saves the baseContext and bbContext in the database in the Users collection
 # It also generates the questions in the background and saves them in the database in the Users collection
 # Generated questions are added on to the user's existing questions
 @bb_questions_bp.route('/generate', methods=['POST'])
-async def ai_generate_bb_questions():
-    user_info = await get_user_info()
-    if not checkResponseSuccess(user_info):
-        logging.error("here User not found")
-        return user_info # will contain error and status message
-    user_email = user_info[0].get("email")
+@authenticate
+async def ai_generate_bb_questions(user_info):
+    user_email = user_info.get('email')
 
     request_json = await request.json
     contexts_info = save_contexts(user_email, request_json, 'bb')
     if not checkResponseSuccess(contexts_info):
         return contexts_info
-
     # generate questions
     messages = craft_openai_bb_messages(contexts_info[0])
 
@@ -64,7 +64,6 @@ async def ai_generate_bb_questions():
 
     logging.info({"questions": fe_formatted_questions})
     return {"questions": fe_formatted_questions}, 201
-
 
 def craft_openai_bb_messages(contexts):
     purpose = contexts.get("purpose")

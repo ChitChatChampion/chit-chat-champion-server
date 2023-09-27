@@ -1,9 +1,8 @@
-from quart import Blueprint, request
+from quart import Blueprint
 import prompts.prompts as prompts
 from database import get_db
-import json
 import logging
-from utils.user import get_user_info
+from utils.user import authenticate
 from utils.utils import checkResponseSuccess, openai_generate_response
 
 bingo_bp = Blueprint('bingo_bp', __name__, url_prefix='/bingo')
@@ -13,12 +12,9 @@ bingo_bp = Blueprint('bingo_bp', __name__, url_prefix='/bingo')
 # It generates bingo squares for players (not game creator) with data that are already stored in the room
 # This data should come from the forms that users submit before the game starts
 @bingo_bp.route('/<id>/generate', methods=['POST'])
-async def ai_generate_bingo_squares(id):
-    user_info = await get_user_info()
-    if not checkResponseSuccess(user_info):
-        logging.error("here User not found")
-        return user_info # will contain error and status message
-    user_email = user_info[0].get('email')
+@authenticate
+async def ai_generate_bingo_squares(id, user_info):
+    user_email = user_info.get('email')
 
     bingo_room = await get_db()['Rooms'].find_one({'_id': id})
     is_valid_room = check_bingo_room(bingo_room)
@@ -36,7 +32,7 @@ async def ai_generate_bingo_squares(id):
                                             'bingo.squares': bingo_squares_arr
                                         }})
 
-    return bingo_squares_arr, 201
+    return {"squares": bingo_squares_arr}, 201
 
 def check_bingo_room(bingo_room):
     if not bingo_room or not bingo_room['game_type'] == 'bingo':
@@ -49,8 +45,6 @@ def get_bingo_player_contexts(bingo_room):
     return bingo_room['bingo']['players']
 
 def craft_openai_bingo_messages(contexts):
-    # TODO: convert contexts into json format to send to openai?
-    # should alr look similar when returned from db
     prompt = f"Help me generate squares for each player in a bingo game. \
     Generate something interesting with a title and a description. \
     Try to keep the title and description as short as possible. The description must be less than 10 words. \

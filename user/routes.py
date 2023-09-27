@@ -1,5 +1,5 @@
 from quart import Blueprint
-from utils.user import get_user_info
+from utils.user import authenticate
 
 user_bp = Blueprint('user_bp', __name__, url_prefix='/user')
 
@@ -15,5 +15,6 @@ user_bp = Blueprint('user_bp', __name__, url_prefix='/user')
 # }
 # Test route
 @user_bp.route("/", methods=["POST"])
-async def get_user_info_test():
-    return await get_user_info()
+@authenticate
+async def get_user_info_test(_):
+    return {"status": "success"}

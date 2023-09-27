@@ -286,7 +286,9 @@ GET /bingo/:id
 Description:
 A bunch of boolean checks. Refer to slide 4 of https://jamboard.google.com/d/12MSzDJFqMhkudXLiaPwagLfFOeWUaTKtW5S2eAtJKyo/viewer?pli=1&mtt=oy63w2r8f9f&f=3
 You receive:
-{}
+{
+  "name": "Linus Richards"
+}
 I receive:
 200: {
   "isOwner": true,

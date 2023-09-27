@@ -259,6 +259,7 @@ You receive:
 }
 I receive:
 200: {}
+409: {}
 
 POST /bingo/:id/players
 Description:

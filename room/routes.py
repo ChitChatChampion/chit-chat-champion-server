@@ -1,7 +1,7 @@
 from quart import Blueprint, request
 import prompts.prompts as prompts
 from database import get_db
-from utils.utils import checkResponseSuccess, format_qns_for_fe
+from utils.utils import checkResponseSuccess, format_entities_for_fe
 from utils.user import authenticate
 from utils.room import create_room, set_room_published_status
 
@@ -32,7 +32,7 @@ async def get_room(room_id):
         return {"message": "Room not found"}, 404
     game_type = room["game_type"]
     if game_type == 'csc' or 'bb':
-        formatted_qns = format_qns_for_fe(room["questions"])
+        formatted_qns = format_entities_for_fe(room["questions"])
         return {"game_type": game_type, "questions": formatted_qns}, 200
     elif game_type == 'quiz':
         # likely different format of return with questions having solutions etc

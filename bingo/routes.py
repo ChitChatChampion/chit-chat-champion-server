@@ -69,3 +69,13 @@ async def get_bingo_squares(id):
     squares = room['bingo']['squares']
     logging.info(squares)
     return squares, 200
+
+@bingo_bp.route('/context', methods=['GET'])
+@authenticate
+async def get_bingo_context(user_info):
+    user_email = user_info.get('email')
+    db = get_db()
+    user = await db['Users'].find_one({'_id': user_email})
+    bingo_context = user['bingo']['bingoContext']
+    logging.info(bingo_context)
+    return {"fields": bingo_context}, 200

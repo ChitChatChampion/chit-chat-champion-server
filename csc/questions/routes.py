@@ -3,9 +3,9 @@ import prompts.prompts as prompts
 from database import check_db
 import logging
 from utils.user import authenticate
-from utils.utils import checkResponseSuccess, format_qns_for_fe, openai_generate_response
-from utils.questions import add_questions_to_user_collection, save_contexts, \
-    get_questions, update_question, create_question, delete_question
+from utils.utils import checkResponseSuccess, format_entities_for_fe, openai_generate_response
+from utils.questions import add_questions_to_user_collection, save_bb_csc_contexts, \
+    get_entities, update_entity, create_entity, delete_entity
 
 csc_questions_bp = Blueprint('csc_questions_bp', __name__, url_prefix='/csc/questions')
 
@@ -20,22 +20,22 @@ async def check_database():
 @csc_questions_bp.route('/', methods=['GET'])
 @authenticate
 async def get_csc_questions(user_info):
-    return await get_questions(user_info, 'csc')
+    return await get_entities(user_info, 'csc')
 
 @csc_questions_bp.route('/<id>', methods=['PUT'])
 @authenticate
 async def update_csc_question(id, user_info):
-    return await update_question(id, user_info, 'csc')
+    return await update_entity(id, user_info, 'csc')
 
 @csc_questions_bp.route('/create', methods=['POST'])
 @authenticate
 async def create_csc_question(user_info):
-    return await create_question(user_info, 'csc')
+    return await create_entity(user_info, 'csc')
 
 @csc_questions_bp.route('/<id>', methods=['DELETE'])
 @authenticate
 async def delete_csc_question(id, user_info):
-    return await delete_question(id, user_info, 'csc')
+    return await delete_entity(id, user_info, 'csc')
     
 # This function is called when the user clicks the "Generate Questions" button
 # It saves the baseContext and cscContext in the database in the Users collection
@@ -47,7 +47,7 @@ async def ai_generate_csc_questions(user_info):
     user_email = user_info.get('email')
 
     request_json = await request.json
-    contexts_info = save_contexts(user_email, request_json, 'csc')
+    contexts_info = save_bb_csc_contexts(user_email, request_json, 'csc')
     if not checkResponseSuccess(contexts_info):
         return contexts_info
     # generate questions
@@ -63,7 +63,7 @@ async def ai_generate_csc_questions(user_info):
         return db_response
 
     db_formatted_questions = db_response[0]
-    fe_formatted_questions = format_qns_for_fe(db_formatted_questions)
+    fe_formatted_questions = format_entities_for_fe(db_formatted_questions)
 
     logging.info({"questions": fe_formatted_questions})
     return {"questions": fe_formatted_questions}, 201

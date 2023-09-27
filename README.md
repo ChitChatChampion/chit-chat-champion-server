@@ -251,10 +251,8 @@ Length of each field doesn't exceed X characters.
 You receive:
 {
   "name": "Clement Tee",
-  "data": {
-    "Gender": "Apache Attack Helicopter",
-    "Favourite Colour": "Oil"
-  },
+  "Gender": "Apache Attack Helicopter",
+  "Favourite Colour": "Oil",
   "other_information": "I like to eat cheese"
 }
 I receive:

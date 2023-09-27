@@ -225,6 +225,35 @@ I receive:
   "id": 12358934
 }
 
+GET /bingo/:id/fields
+Description:
+Gets the fields for the players to fill in.
+You receive:
+{}
+I receive:
+200: {
+  "fields": [
+    {"id": 1234165341, "content": "Gender"},
+    {"id": 1237890452, "content": "Favourite brand of chocolate"}
+  ]
+}
+
+POST /bingo/:id/join
+Description:
+Players submit their form which should contain their personal information. Everything in "data" is meant to be pushed wholesale into ChatGPT.
+Guarantees:
+Length of each field doesn't exceed X characters.
+You receive:
+{
+  "name": "Clement Tee",
+  "data": {
+    "Gender": "Apache Attack Helicopter",
+    "Favourite Colour": "Oil"
+  }
+}
+I receive:
+200: {}
+
 POST /bingo/:id/players
 Description:
 Get a list of people who have submitted a form. Should only return if you are the owner.

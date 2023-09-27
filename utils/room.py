@@ -1,21 +1,20 @@
 from database import get_db
 import logging
-import hashlib
+from nanoid import generate
+
 
 async def generate_unique_room_id_from(game_type, user_email):
-    # Hash the user's email concated with game type to generate a unique room id
-    # This is to ensure that we don't have thousands of room ids lying around in the db
-    max_room_id_length = 6
-    room_id = hashlib.sha256(bytes(game_type + user_email, 'utf-8')).hexdigest()[:max_room_id_length]
-
-    # TODO: do a _many call for collisions
-
-    # while True:
-    #     room_id = generate(size=6)
-    #     room = await get_db()["Rooms"].find_one({'_id': room_id})
-    #     if not room:
-    #         logging.info(f"Unique room {room_id} found")
-    #         break
+    # Find room that may have been created by the same user for the same game_type
+    room = await get_db()["Rooms"].find_one({'user_id': user_email, 'game_type': game_type})
+    if room:
+        return room['_id']
+    # If no room found, generate a new room id
+    while True:
+        room_id = generate(size=6)
+        room = await get_db()["Rooms"].find_one({'_id': room_id})
+        if not room:
+            logging.info(f"Unique room {room_id} found")
+            break
     return room_id
 
 async def set_room_published_status(room_id, set_is_published):
@@ -30,6 +29,8 @@ async def set_room_published_status(room_id, set_is_published):
     
     return {"message": f"Room {room_id} {'published' if set_is_published else 'unpublished'} successfully"}
 
+# This create room should only be used for csc, bb 
+# and other games with 'questions'/format
 async def create_room(user_info, game_type):
     user_email = user_info.get('email')
 

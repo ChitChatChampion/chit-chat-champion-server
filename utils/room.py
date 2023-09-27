@@ -7,14 +7,12 @@ from utils.utils import checkResponseSuccess
 import hashlib
 
 async def generate_unique_room_id_from(game_type, user_email):
-    # Hash the user's email and concat it with game type to generate a unique room id
+    # Hash the user's email concated with game type to generate a unique room id
     # This is to ensure that we don't have thousands of room ids lying around in the db
     max_room_id_length = 6
-    room_id = game_type[:2] + str(hashlib.sha256(bytes(user_email, 'utf-8')).hexdigest()())[:max_room_id_length - 2]
+    room_id = hashlib.sha256(bytes(game_type + user_email, 'utf-8')).hexdigest()[:max_room_id_length]
 
-    assert(len(room_id) == max_room_id_length)
-
-    # TODO: think about collisions later. We prob just leave the room up for now until user creates a new one
+    # TODO: do a _many call for collisions
 
     # while True:
     #     room_id = generate(size=6)

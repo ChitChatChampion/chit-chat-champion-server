@@ -219,7 +219,12 @@ POST /room/bingo/create
 Description:
 Creates a game room, but don't have the questions yet.
 You receive:
-{}
+{
+  "fields": [
+    {"id": 1234165341, "content": "Gender"},
+    {"id": 1237890452, "content": "Favourite brand of chocolate"}
+  ]
+}
 I receive:
 200: {
   "id": 12358934

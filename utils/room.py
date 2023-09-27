@@ -1,6 +1,5 @@
 from database import get_db
 import logging
-from utils.user import authenticate
 import hashlib
 
 async def generate_unique_room_id_from(game_type, user_email):
@@ -31,9 +30,7 @@ async def set_room_published_status(room_id, set_is_published):
     
     return {"message": f"Room {room_id} {'published' if set_is_published else 'unpublished'} successfully"}
 
-# TODO: check how this is called
-@authenticate
-async def create_room(game_type, user_info):
+async def create_room(user_info, game_type):
     user_email = user_info.get('email')
 
     logging.info(f"{user_email}: Creating {game_type} room")

@@ -53,7 +53,10 @@ async def ai_generate_bb_questions():
     # generate questions
     messages = craft_openai_bb_messages(contexts_info[0])
 
-    question_arr = openai_generate_response(user_email, messages)
+    question_arr, message = openai_generate_response(user_email, messages)
+
+    if message != "success":
+        return {"questions": [], "message": "Invalid query given."}, 400
 
     db_response = await add_questions_to_user_collection(question_arr, user_email, 'bb')
     if not checkResponseSuccess(db_response):

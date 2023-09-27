@@ -28,7 +28,8 @@ async def ai_generate_bingo_squares(id):
     player_contexts = get_bingo_player_contexts(bingo_room)
     messages = craft_openai_bingo_messages(player_contexts)
 
-    bingo_squares_arr = openai_generate_response(user_email, messages)
+    bingo_squares_arr, message = openai_generate_response(user_email, messages)
+    
     logging.info(f"{user_email}: OpenAI response: {bingo_squares_arr}")
 
     await get_db()['Rooms'].update_one({"_id": id},

@@ -5,6 +5,9 @@ from quart import jsonify, request
 from utils.user import get_user_info
 from utils.utils import getBaseContext, checkResponseSuccess, format_qns_for_fe
 
+MIN_INPUT_PROMPT_LENGTH = 3
+MAX__INPUT_PROMPT_LENGTH = 20
+
 async def add_questions_to_user_collection(ai_questions_arr, user_email, game_type):
     try:
         logging.info(f"{user_email}: Adding questions to collection")
@@ -44,9 +47,18 @@ def generate_unique_question_id(questions):
 
 # assumes csc or bb game type; check if fields are different for quiz
 def save_contexts(user_email, request_json, game_type):
+    baseContext = request_json.get('baseContext')
+    if not baseContext:
+        return {"message": "No baseContext data"}, 400
+    
     purpose, relationship, description  = getBaseContext(request_json.get('baseContext'))
 
+    if not MIN_INPUT_PROMPT_LENGTH <= len(purpose) <= MAX__INPUT_PROMPT_LENGTH or \
+        not MIN_INPUT_PROMPT_LENGTH <= len(description) <= MAX__INPUT_PROMPT_LENGTH:
+        return {"message": "Invalid input prompt length"}, 400
+
     number_of_questions = request_json.get(f'{game_type}Context').get('number_of_questions')
+
     if number_of_questions > 20:
         return {"message": "Too many questions requested"}, 400
 

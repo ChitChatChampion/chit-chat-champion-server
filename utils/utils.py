@@ -40,20 +40,24 @@ def openai_generate_response(user_email, messages):
     )
     openai_response = response['choices'][0]['message']['content']
 
-    response_arr = parse_openai_response(openai_response)
-    logging.info("SUCCESSFULLY PARSED OPENAI RESPONSE")
+    response_arr, message = parse_openai_response(openai_response)
+    logging.info("Successfully parsed OpenAI response")
 
-    return response_arr
+    return response_arr, message
 
 def parse_openai_response(openai_response):
-    if openai_response[0] == '[' and openai_response[-1] == ']':
+    logging.info(f"OpenAI response: {openai_response}")
+    
+    # API response is now a JSON to include the message
+    if openai_response[0] == '{' and openai_response[-1] == '}':
         try:
-            return json.loads(openai_response)
+            openai_response_json = json.loads(openai_response)
+            return openai_response_json['data'], openai_response_json['message']
         except json.JSONDecodeError as e:
             logging.info(f"Openai response JSON parsing error: {e}")
-            return []
+            return [], "Invalid Query"
     else:
         # We just remove the quotation marks for a single question response
         if openai_response[0] == '"' and openai_response[-1] == '"':
             openai_response = openai_response[1:-1]
-        return [openai_response]
+        return [openai_response], "Invalid Query"

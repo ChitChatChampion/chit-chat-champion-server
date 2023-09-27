@@ -1,6 +1,7 @@
 from database import get_db
 import logging
 from nanoid import generate
+from quart import request
 
 
 async def generate_unique_room_id_from(game_type, user_email):
@@ -31,7 +32,7 @@ async def set_room_published_status(room_id, set_is_published):
 
 # This create room should only be used for csc, bb 
 # and other games with 'questions'/format
-async def create_room(user_info, game_type):
+async def create_questions_room(user_info, game_type):
     user_email = user_info.get('email')
 
     logging.info(f"{user_email}: Creating {game_type} room")
@@ -62,3 +63,31 @@ async def create_room(user_info, game_type):
         'questions': questions
         }}, upsert=True)
     return {"id": room_id}, 201
+
+async def create_bingo_room(user_info):
+    user_email = user_info.get('email')
+    logging.info(f"{user_email}: Creating bingo room")
+    request_json = await request.json
+    fields = request_json.get('fields')
+    if not fields:
+        return {"message": "No fields found"}, 400
+    room_id = await generate_unique_room_id_from('bingo', user_email)
+    await get_db()['Rooms'].update_one(
+        {'_id': room_id},
+        {'$set': {
+            'user_id': user_email,
+            'game_type': 'bingo',
+            'is_published': False,
+            'bingo': {
+                'has_started': False,
+                'fields': fields,
+                'squares': [],
+                'player_info': [],
+                'player_names': [],
+                'submissions': {}
+            }
+        }}, upsert=True)
+    return {"id": room_id}, 200
+
+def check_is_room_owner(room, user_email):
+    return room['user_id'] == user_email

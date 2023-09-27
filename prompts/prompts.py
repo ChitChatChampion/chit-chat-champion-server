@@ -48,22 +48,25 @@ Generate something interesting with a title and a description. \
 Try to keep the title and description as short as possible. The description must be less than 10 words. \
 Pick the most obscure fact that makes it hard for others to guess who belongs in that square. \
 Try to avoid including anything similar between players in the bingo squares. \
-The following json object contains the players' details: 
+Each json object in the following array contains a player's details: 
 {
-  "Isabella": {
+  {
+    "name": "Isabella",
     "gender": "female",
     "age": "21",
     "description": "nus computing student, has a cat. loves the outdoors. 2000 followers on tik tok! fashion queen, loves selfies. Add me on instagram!"
   },
-  "Harper": {
+  {
+      "name": "Harper",
       "gender": "pansexual",
       "age": "22",
       "description": "nus computing student, loves genshin. loves uncle roger. addicted to coffee. forever indoors. forever alone. :("
   },
-  "William \"The Wolf\" Waverly": {
-  "gender": "alpha male",
-  "age": "23",
-  "description": "I was the student council president. I'm a Linkedin influencer and own four start-ups. I'm also a financial investor. Come follow me on OctaFX."
+  {
+    "name": "William \"The Wolf\" Waverly",
+    "gender": "alpha male",
+    "age": "23",
+    "description": "I was the student council president. I'm a Linkedin influencer and own four start-ups. I'm also a financial investor. Come follow me on OctaFX."
   }
 }
 """

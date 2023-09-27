@@ -2,8 +2,7 @@ from database import get_db
 import logging
 from nanoid import generate
 from quart import jsonify, request
-from utils.user import get_user_info
-from utils.utils import getBaseContext, checkResponseSuccess, format_qns_for_fe
+from utils.utils import getBaseContext, format_qns_for_fe
 
 MIN_INPUT_PROMPT_LENGTH = 3
 MAX__INPUT_PROMPT_LENGTH = 20
@@ -78,12 +77,8 @@ def save_contexts(user_email, request_json, game_type):
     return {"purpose": purpose, "relationship": relationship, "description": description,
             "number_of_questions": number_of_questions}, 201
 
-async def get_questions(game_type):
-    user_info = await get_user_info()
-    if not checkResponseSuccess(user_info):
-        return user_info # will contain error and status message
-
-    user_email = user_info[0].get("email")
+async def get_questions(user_info, game_type):
+    user_email = user_info.get("email")
 
     user = await get_db()['Users'].find_one({"_id": user_email})
     if not user:
@@ -93,12 +88,9 @@ async def get_questions(game_type):
         return {"questions": []}, 200
     return format_qns_for_fe(questions), 200
 
-async def update_question(id, game_type):
+async def update_question(id, user_info, game_type):
     request_data = await request.json
-    user_info = await get_user_info()
-    if not checkResponseSuccess(user_info):
-        return user_info # will contain error and status message
-    user_email = user_info[0].get("email")
+    user_email = user_info.get("email")
 
     content = request_data.get('content')
 
@@ -123,11 +115,8 @@ async def update_question(id, game_type):
         error_message = f"Error: {str(e)}"
         return jsonify({"message": error_message}), 500
     
-async def create_question(game_type):
-    user_info = await get_user_info()
-    if not checkResponseSuccess(user_info):
-        return user_info # will contain error and status message
-    user_email = user_info[0].get("email")
+async def create_question(user_info, game_type):
+    user_email = user_info.get("email")
 
     try:
         user = await get_db()['Users'].find_one({"_id": user_email})
@@ -146,11 +135,8 @@ async def create_question(game_type):
         error_message = f"Error: {str(e)}"
         return jsonify({"message": error_message}), 500
     
-async def delete_question(id, game_type):
-    user_info = await get_user_info()
-    if not checkResponseSuccess(user_info):
-        return user_info # will contain error and status message
-    user_email = user_info[0].get("email")
+async def delete_question(id, user_info, game_type):
+    user_email = user_info.get("email")
 
     try:
         user = await get_db()['Users'].find_one({"_id": user_email})

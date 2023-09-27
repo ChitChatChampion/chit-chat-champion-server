@@ -269,9 +269,9 @@ You receive:
 I receive:
 200: {
   "players": [
-    {"name": "Amirah Tan"},
-    {"name": "Nicholas Tan Bin"},
-    {"name": "Nicole Hai Wei Ting"}
+    "Amirah Tan",
+    "Nicholas Tan Bin",
+    "Nicole Hai Wei Ting"
   ]
 }
 
@@ -280,7 +280,10 @@ You receive:
 {}
 I receive:
 201: {
-  "squares": [ { "description": "Obsessed with K-dramas and Gong Woo", "name": "Jonathan", "title": "K-drama Fanatic" }, { "description": "Enthusiastic about flying and making woosh sounds", "name": "Icarus \"Icky\" Iguana", "title": "Helicopter Gender" } ]
+  "squares": [
+    { "description": "Obsessed with K-dramas and Gong Woo", "name": "Jonathan","title": "K-drama Fanatic" },
+    { "description": "Enthusiastic about flying and making woosh sounds", "name": "Icarus \"Icky\" Iguana", "title": "Helicopter Gender" }
+  ]
 }
 
 GET /bingo/:id
@@ -299,7 +302,10 @@ You receive:
 {}
 I receive:
 200: {
-  "squares": [ { "description": "Obsessed with K-dramas and Gong Woo", "name": "Jonathan", "title": "K-drama Fanatic" }, { "description": "Enthusiastic about flying and making woosh sounds", "name": "Icarus \"Icky\" Iguana", "title": "Helicopter Gender" } ]
+  "squares": [
+    { "description": "Obsessed with K-dramas and Gong Woo", "name": "Jonathan", "title": "K-drama Fanatic" },
+    { "description": "Enthusiastic about flying and making woosh sounds", "name": "Icarus \"Icky\" Iguana", "title": "Helicopter Gender" }
+  ]
 }
 
 POST /bingo/:id/submit

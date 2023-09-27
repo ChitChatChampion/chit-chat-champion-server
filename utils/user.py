@@ -84,3 +84,11 @@ async def bingo_auth():
     except Exception as e:
         logging.error(e)
         return jsonify({"message": "Error trying to verify user"}), 500
+
+# Define a fake auth decorator for testing endpoints
+def fake_authenticate(func):
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        kwargs['user_info'] = {"email": "fake@email.com", "name": "FAKE"}
+        return await func(*args, **kwargs)
+    return wrapper

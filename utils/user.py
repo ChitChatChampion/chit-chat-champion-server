@@ -27,6 +27,10 @@ async def signup_user(user_info):
                 'csc': {
                     'cscContext': {},
                     'questions': {}
+                },
+                'bingo': {
+                    'bingoContext': {},
+                    'squares': {}
                 }
             })
             logging.info(f"Added user {email} to database")
@@ -34,7 +38,7 @@ async def signup_user(user_info):
             logging.info("User already exists in database")
     except Exception as e:
         logging.error(e)
-        return jsonify({"error": str(e)}), 500
+        return jsonify({"message": "Error trying to verify user"}), 500
 
 # Define the authentication decorator
 def authenticate(func):
@@ -42,7 +46,8 @@ def authenticate(func):
     async def wrapper(*args, **kwargs):
         access_token = request.headers.get("Access-Token")
         if not access_token:
-            return jsonify({"error": "Access token missing"}), 401
+            logging.error("Access token missing")
+            return jsonify({"message": "Access token missing"}), 401
 
         headers = {
             "Authorization": f"Bearer {access_token}"
@@ -52,13 +57,15 @@ def authenticate(func):
             response = requests.get(USERINFO_URL, headers=headers)
 
             if response.status_code == 200:
+                logging.info("Successfully fetched user info")
                 user_info = response.json()
                 await signup_user(user_info)
                 kwargs['user_info'] = user_info  # Pass user_info as a keyword argument
                 return await func(*args, **kwargs)
             else:
-                return jsonify({"error": "Failed to fetch user info"}), response.status_code
+                return jsonify({"message": "Access token expired"}), response.status_code
         except Exception as e:
-            return jsonify({"error": str(e)}), 500
+            logging.error(e)
+            return jsonify({"message": "Error trying to verify user"}), 500
 
     return wrapper

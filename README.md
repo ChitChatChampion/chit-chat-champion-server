@@ -10,213 +10,283 @@
 1. Run `python3 main.py`
 
 ## TRADE DEAL
+
+### User
+```
+Checks if you're the owner of the room
+GET /user/room/:id
+You receive:
+{}
+I receive:
+200: {
+  is_owner: True
+}
+```
+
+### Room
+```
+GET /room/:id
+You receive:
+{}
+I receive:
+200: {
+  "game_type": "csc"
+}
+```
+
+### CSC
 ```
 GET /csc/context
 You receive:
 {}
 I receive:
 200: {
-  baseContext: {
-      "purpose": "first date",
-      "relationship": "acquaintances",
-      "description": "20-year-old singaporean university computing students who have no social life"
+  "baseContext": {
+    "purpose": "first date",
+    "relationship": "acquaintances",
+    "description": "20-year-old singaporean university computing students who have no social life"
   },
-  cscContext: {
-      "numberOfQuestions": 10
+  "cscContext": {
+    "number_of_questions": 10
   },
-  questions: [{"id": 123, "What is your favorite food?"}, {"id:234, "What is your favorite icecream?"}]
+  "questions": [
+    {"id": 123, "content": "What is your favorite food?"},
+    {"id": 234, "content": "What is your favorite icecream?"}
+  ]
 }
-400: { "error": "Haiya" }
-401: { "error": "Haiya" }
 
-GET /bb/context
+POST /csc/questions/generate
 You receive:
-{}
-I receive:
-200: {
-  baseContext: {
-      "purpose": "first date",
-      "relationship": "acquaintances",
-      "description": "20-year-old singaporean university computing students who have no social life"
+{
+  "baseContext": {
+    "purpose": "first date",
+    "relationship": "acquaintances",
+    "description": "20-year-old singaporean university computing students who have no social life"
   },
-  bbContext: {
-      "numberOfQuestions": 10
+  "cscContext": {
+    "number_of_questions": 10
   },
-  questions: [{"id": 123, "content": "Who is more likely to burn down the computing building?"}, {"id": 123, "content": "Who is the most likely to use Haskel?"}]
 }
-400: { "error": "Haiya" }
-401: { "error": "Haiya" }
+I receive:
+201: {
+  "questions": [
+    {"id": 123, "content": "Who is more likely to burn down the computing building?"},
+    {"id": 123, "content": "Who is the most likely to use Haskel?"}
+  ]
+}
 
 POST /csc/questions/create
 You receive:
 {}
 I receive:
-201: {
-      "id": 11357890,
+200: {
+  "id": 11357890,
 }
-400: { "error": "Haiya" }
-401: { "error": "Haiya" }
 
 PUT /csc/questions/:id
 You receive:
 {
-  content: "Who is more likely to burn down the computing building?"
+  "content": "Who is more likely to burn down the computing building?"
 }
 I receive:
-201: {
-      "id": 11357890,
-}
-400: { "error": "Haiya" }
-401: { "error": "Haiya" }
-
-GET /csc/questions
-You receive:
-{
-}
-I receive:
-201:
-{
-questions: [
-{
-      "id": 11357891,
-      "text": "Who is more likely to burn down the computing building?"
-},
-{
-      "id": 11357890,
-      "text": "Who is more likely to burn down the computing building?"
-}
-]
-}
-400: { "error": "Haiya" }
-401: { "error": "Haiya" }
+200: {}
 
 DELETE /csc/questions/:id
 You receive:
-{
-}
+{}
 I receive:
-201: {
-      "id": 11357890,
-}
-400: { "error": "Haiya" }
-401: { "error": "Haiya" }
+201: {}
 
 POST /room/csc/create
 You receive:
 {}
 I receive:
-201: {
+200: {
   "id": "ABGED"
 }
+```
 
-
-
-
-
-
-
-
-
-
-
-
-
-
+### BB
+```
 GET /bb/context
 You receive:
 {}
 I receive:
 200: {
-  baseContext: {
-      "purpose": "first date",
-      "relationship": "acquaintances",
-      "description": "20-year-old singaporean university computing students who have no social life"
+  "baseContext": {
+    "purpose": "first date",
+    "relationship": "acquaintances",
+    "description": "20-year-old singaporean university computing students who have no social life"
   },
-  bbContext: {
-      "numberOfQuestions": 10
+  "bbContext": {
+    "number_of_questions": 10
   },
-  questions: [{"id": 123, "What is your favorite food?"}, {"id:234, "What is your favorite icecream?"}]
+  "questions": [
+    {"id": 123, "content": "What is your favorite food?"},
+    {"id": 234, "content": "What is your favorite icecream?"}
+  ]
 }
-400: { "error": "Haiya" }
-401: { "error": "Haiya" }
 
-GET /bb/context
+POST /bb/questions/generate
 You receive:
-{}
-I receive:
-200: {
-  baseContext: {
-      "purpose": "first date",
-      "relationship": "acquaintances",
-      "description": "20-year-old singaporean university computing students who have no social life"
+{
+  "baseContext": {
+    "purpose": "first date",
+    "relationship": "acquaintances",
+    "description": "20-year-old singaporean university computing students who have no social life"
   },
-  bbContext: {
-      "numberOfQuestions": 10
+  "bbContext": {
+    "number_of_questions": 10
   },
-  questions: [{"id": 123, "content": "Who is more likely to burn down the computing building?"}, {"id": 123, "content": "Who is the most likely to use Haskel?"}]
 }
-400: { "error": "Haiya" }
-401: { "error": "Haiya" }
+I receive:
+201: {
+  "questions": [
+    {"id": 123, "content": "Who is more likely to burn down the computing building?"},
+    {"id": 123, "content": "Who is the most likely to use Haskel?"}
+  ]
+}
 
 POST /bb/questions/create
 You receive:
 {}
 I receive:
-201: {
-      "id": "asd",
+200: {
+  "id": 11357890,
 }
-400: { "error": "Haiya" }
-401: { "error": "Haiya" }
 
 PUT /bb/questions/:id
 You receive:
 {
-  content: "Who is more likely to burn down the computing building?"
+  "content": "Who is more likely to burn down the computing building?"
 }
 I receive:
-201: {
-      "id": 11357890,
-}
-400: { "error": "Haiya" }
-401: { "error": "Haiya" }
-
-GET /bb/questions
-You receive:
-{
-}
-I receive:
-201:
-{
-questions: [
-{
-      "id": "abc",
-      "content": "Who is more likely to burn down the computing building?"
-},
-{
-      "id": "def",
-      "content": "Who is more likely to burn down the computing building?"
-}
-]
-}
-400: { "error": "Haiya" }
-401: { "error": "Haiya" }
+200: {}
 
 DELETE /bb/questions/:id
 You receive:
-{
-}
+{}
 I receive:
-201: {
-      "id": "1av",
-}
-400: { "error": "Haiya" }
-401: { "error": "Haiya" }
+200: {}
 
 POST /room/bb/create
 You receive:
 {}
 I receive:
-201: {
+200: {
   "id": "ABGED"
 }
+```
+
+### Bingo
+```
+GET /bingo/context
+You receive:
+
+POST /bingo/<id>/generate
+You receive:
+{}
+I receive:
+201: {
+  "squares": [ { "description": "Obsessed with K-dramas and Gong Woo", "name": "Jonathan", "title": "K-drama Fanatic" }, { "description": "Enthusiastic about flying and making woosh sounds", "name": "Icarus \"Icky\" Iguana", "title": "Helicopter Gender" } ]
+}
+
+GET /bingo/<id>/squares
+You receive:
+{}
+I receive:
+200: {
+  "squares": [ { "description": "Obsessed with K-dramas and Gong Woo", "name": "Jonathan", "title": "K-drama Fanatic" }, { "description": "Enthusiastic about flying and making woosh sounds", "name": "Icarus \"Icky\" Iguana", "title": "Helicopter Gender" } ]
+}
+```
+
+### Quiz
+```
+POST /room/quiz/create
+You receive:
+{}
+I receive:
+201: {
+  "id": 123413534253
+}
+
+GET /quiz/:room_id/context
+You receive:
+{}
+I receive:
+200: {
+  "baseContext": {
+    "purpose": "first date",
+    "relationship": "acquaintances",
+    "description": "20-year-old singaporean university computing students who have no social life"
+  },
+  "quizContext": {
+    "number_of_questions": 10
+  }
+}
+
+POST /quiz/:room_id/questions/generate
+You receive:
+{
+  "baseContext": {
+    "purpose": "first date",
+    "relationship": "acquaintances",
+    "description": "20-year-old singaporean university computing students who have no social life"
+  },
+  "quizContext": {
+    "number_of_questions": 10
+  }
+}
+I receive:
+201: {
+  "questions": [
+    {
+      "id": 123,
+      "content": "Who has burned down the computing building?",
+      "options": [
+        "Jason", // First option is always the correct one
+        "Jason",
+        "Jason",
+        "Jason"
+      ]
+    },
+  ]
+}
+
+POST /quiz/:room_id/questions/create
+You receive:
+{}
+I receive:
+200: {
+  "id": 11357890,
+}
+
+PUT /quiz/:room_id/questions/:id
+You receive:
+{
+  "content": "Who is more likely to burn down the computing building?"
+}
+I receive:
+200: {}
+
+DELETE /quiz/:room_id/questions/:id
+You receive:
+{}
+I receive:
+200: {}
+
+POST /quiz/:room_id/join
+You receive:
+{
+  "name": "Jason",
+  "information": "I am a mega-brained individual"
+}
+I receive:
+200: {}
+
+POST /quiz/:room_id/start
+You receive:
+{}
+I receive:
+200: {}
 ```

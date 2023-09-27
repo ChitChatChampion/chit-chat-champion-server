@@ -29,16 +29,16 @@ async def create_bb_room(user_info):
 async def get_room(room_id):
     room = await get_db()["Rooms"].find_one({"_id": room_id})
     if not room or not room['is_published']:
-        return {"error": "Room not found"}, 404
+        return {"message": "Room not found"}, 404
     game_type = room["game_type"]
     if game_type == 'csc' or 'bb':
         formatted_qns = format_qns_for_fe(room["questions"])
         return {"game_type": game_type, "questions": formatted_qns}, 200
     elif game_type == 'quiz':
         # likely different format of return with questions having solutions etc
-        return {"error": f"not yet implemented for {game_type}"}, 404
+        return {"message": f"not yet implemented for {game_type}"}, 404
     else:
-        return {"error": f"Unrecognised game type {game_type}"}, 404
+        return {"message": f"Unrecognised game type {game_type}"}, 404
         
 
 # create room: POST /room/publish, return success/failure
@@ -60,10 +60,10 @@ async def update_room_before_publish(user_email, room_id):
     db = get_db()
     user = await db["Users"].find_one({"_id": user_email})
     if not user:
-        return {"error": "User not found"}, 404
+        return {"message": "User not found"}, 404
     room = await db["Rooms"].find_one({"_id": room_id})
     if not room:
-        return {"error": "Room not found"}, 404
+        return {"message": "Room not found"}, 404
 
     if room['game_type'] == 'csc':
         questions = user["csc"]["questions"]
@@ -74,7 +74,7 @@ async def update_room_before_publish(user_email, room_id):
         await db["Rooms"].update_one({"_id": room_id}, {'$set': {'questions': questions}})
         return {"message": "success"}, 200
     else:
-        return {"error": "Room has invalid game_type"}, 400
+        return {"message": "Room has invalid game_type"}, 400
 
 # unpublish room
 @room_bp.route('/unpublish', methods=["POST"])
@@ -82,4 +82,10 @@ async def unpublish_room():
     request_json = await request.json
     room_id = request_json.get('room_id')
 
-    return await set_room_published_status(room_id, False)
+    existing_room = await get_db()["Rooms"].find_one({"_id": room_id})
+    if not existing_room:
+        return {"message": "Room not found"}, 404
+
+    await get_db()["Rooms"].delete_one({"_id": room_id})
+
+    return {"message": f"Room {room_id} unpublished successfully"}, 200

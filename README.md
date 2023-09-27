@@ -261,7 +261,7 @@ I receive:
 200: {}
 409: {}
 
-POST /bingo/:id/players
+GET /bingo/:id/players
 Description:
 Get a list of people who have submitted a form. Should only return if you are the owner.
 You receive:

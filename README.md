@@ -332,6 +332,15 @@ I receive:
     {"name": "Wu Si Ling", "score": 3}
   ]
 }
+
+POST /bingo/:id/start
+Description:
+Host presses a button to start the game.
+You receive:
+{}
+I receive:
+200: {}
+
 ```
 
 ### Quiz

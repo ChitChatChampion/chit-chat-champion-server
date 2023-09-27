@@ -83,4 +83,10 @@ async def unpublish_room():
     request_json = await request.json
     room_id = request_json.get('room_id')
 
-    return await set_room_published_status(room_id, False)
+    existing_room = await get_db()["Rooms"].find_one({"_id": room_id})
+    if not existing_room:
+        return {"message": "Room not found"}, 404
+
+    await get_db()["Rooms"].delete_one({"_id": room_id})
+
+    return {"message": f"Room {room_id} unpublished successfully"}, 200

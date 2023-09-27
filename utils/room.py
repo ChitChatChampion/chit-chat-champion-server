@@ -1,7 +1,6 @@
 from database import get_db
 import logging
 from nanoid import generate
-from quart import request
 
 
 async def generate_unique_room_id_from(game_type, user_email):
@@ -64,13 +63,11 @@ async def create_questions_room(user_info, game_type):
         }}, upsert=True)
     return {"id": room_id}, 201
 
-async def create_bingo_room(user_info):
+async def create_bingo_room_helper(user_info):
     user_email = user_info.get('email')
     logging.info(f"{user_email}: Creating bingo room")
-    request_json = await request.json
-    fields = request_json.get('fields')
-    if not fields:
-        return {"message": "No fields found"}, 400
+    user = await get_db()['Users'].find_one({"_id": user_email})
+    fields = user['bingo']['fields']
     room_id = await generate_unique_room_id_from('bingo', user_email)
     await get_db()['Rooms'].update_one(
         {'_id': room_id},

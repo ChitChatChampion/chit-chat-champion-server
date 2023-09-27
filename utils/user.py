@@ -23,7 +23,7 @@ async def signup_user(user_info):
                     "baseContext": {},
                     "bb": {"bbContext": {}, "questions": {}},
                     "csc": {"cscContext": {}, "questions": {}},
-                    "bingo": {"bingoContext": {}, "fields": {}},
+                    "bingo": {"fields": {}},
                 }
             )
             logging.info(f"Added user {email} to database")
@@ -62,7 +62,8 @@ def authenticate(func):
 
     return wrapper
 
-
+# bingo auth is used for routes where users do NOT have to be authenticated
+# but we want to know if they are
 async def bingo_auth():
     access_token = request.headers.get("Access-Token")
     if not access_token:

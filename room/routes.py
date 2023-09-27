@@ -3,7 +3,7 @@ import prompts.prompts as prompts
 from database import get_db
 from utils.utils import checkResponseSuccess, format_entities_for_fe
 from utils.user import authenticate
-from utils.room import create_questions_room, set_room_published_status, create_bingo_room
+from utils.room import create_questions_room, set_room_published_status, create_bingo_room_helper
 
 
 room_bp = Blueprint('room_bp', __name__, url_prefix='/room')
@@ -22,7 +22,7 @@ async def create_bb_room(user_info):
 @room_bp.route('/bingo/create', methods=["POST"])
 @authenticate
 async def create_bingo_room(user_info):
-    return await create_bingo_room(user_info)
+    return await create_bingo_room_helper(user_info)
 
 # GET
 # /room/:id

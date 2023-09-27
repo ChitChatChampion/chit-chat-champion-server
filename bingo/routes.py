@@ -13,24 +13,28 @@ bingo_bp = Blueprint('bingo_bp', __name__, url_prefix='/bingo')
 # IF THERE ARE EXISTING SQUARES, THIS FUNCTION WILL DELETE/OVERWRITE THEM
 # It generates bingo squares for players (not game creator) with data that are already stored in the room
 # This data should come from the forms that users submit before the game starts
-@bingo_bp.route('/<id>/generate', methods=['POST'])
+@bingo_bp.route('/<room_id>/generate', methods=['POST'])
 @authenticate
-async def ai_generate_bingo_squares(id, user_info):
+async def ai_generate_bingo_squares(room_id, user_info):
     user_email = user_info.get('email')
 
-    bingo_room = await get_db()['Rooms'].find_one({'_id': id})
+    bingo_room = await get_db()['Rooms'].find_one({'_id': room_id})
     is_valid_room = check_is_bingo_room(bingo_room) and check_bingo_room_has_players(bingo_room)
-    if not checkResponseSuccess(is_valid_room):
-        return is_valid_room
+    if not is_valid_room:
+        return {"message": "Room not found"}, 404
+    if not check_is_room_owner(bingo_room, user_email):
+        return {"message": "Authentication error"}, 401
 
     player_contexts = get_bingo_player_contexts(bingo_room)
     messages = craft_openai_bingo_messages(player_contexts)
 
     bingo_squares_arr, message = openai_generate_response(user_email, messages)
+    if message != "success":
+        return {"message": "Invalid query given."}, 400
 
     logging.info(f"{user_email}: OpenAI response: {bingo_squares_arr}")
 
-    await get_db()['Rooms'].update_one({"_id": id},
+    await get_db()['Rooms'].update_one({"_id": room_id},
                                         {'$set': {
                                             'bingo.squares': bingo_squares_arr
                                         }})
@@ -73,9 +77,10 @@ async def get_bingo_context(user_info):
     user_email = user_info.get('email')
     db = get_db()
     user = await db['Users'].find_one({'_id': user_email})
-    bingo_context = user['bingo']['bingoContext']
-    logging.info(bingo_context)
-    return {"fields": bingo_context}, 200
+    bingo_context = user['bingo']['fields']
+    fields = format_entities_for_fe(bingo_context)
+
+    return {"fields": fields}, 200
 
 @bingo_bp.route('/fields/create', methods=['POST'])
 @authenticate
@@ -102,6 +107,7 @@ async def get_bingo_fields(id):
     fields = room['bingo']['fields']
     if not fields:
         return {"message": "Fields not found"}, 404
+
     fe_formatted_fields = format_entities_for_fe(fields)
     return {"fields": fe_formatted_fields}, 200
 
@@ -111,7 +117,7 @@ async def join_bingo_room(id):
     request_json = await request.json
     name = request_json.get('name')
     logging.info("user form received: " + str(request_json))
-    if not name or not request_json.get('data') or not request_json.get('other_information'):
+    if not name:
         return {"message": "Invalid form data"}, 400
     room = await get_db()['Rooms'].find_one({'_id': id})
     if not check_is_bingo_room(room):
@@ -142,36 +148,7 @@ async def get_bingo_players(id, user_info):
     player_names = room['bingo']['player_names']
     return {"players": player_names}, 200
 
-# POST /bingo/:id/generate
-# You receive:
-# {}
-# I receive:
-# 201: {
-#   "squares": [ { "description": "Obsessed with K-dramas and Gong Woo", "name": "Jonathan", "title": "K-drama Fanatic" },
-#   { "description": "Enthusiastic about flying and making woosh sounds", "name": "Icarus \"Icky\" Iguana", "title": "Helicopter Gender" } ]
-# }
-@bingo_bp.route('/<id>/generate', methods=['POST'])
-@authenticate
-async def generate_bingo_squares(id, user_info):
-    user_email = user_info.get('email')
-    room = await get_db()['Rooms'].find_one({'_id': id})
-    if not room or not check_is_bingo_room(room):
-        return {"message": "Room not found"}, 404
-    if not check_is_room_owner(room, user_email):
-        return {"message": "Authentication error"}, 401
-
-    player_contexts = get_bingo_player_contexts(room)
-    messages = craft_openai_bingo_messages(player_contexts)
-    bingo_squares_arr, message = openai_generate_response(user_email, messages)
-    if message != "success":
-        return {"message": "Invalid query given."}, 400
-    await get_db()['Rooms'].update_one({"_id": id},
-                                        {'$set': {
-                                            'bingo.squares': bingo_squares_arr
-                                        }})
-    return {"squares": bingo_squares_arr}, 201
-
-# unauthenticated
+# may be authenticated or unauthenticated. bingo_auth is used.
 @bingo_bp.route('/<id>', methods=['GET'])
 async def get_bingo_room_checks(id):
     room = await get_db()['Rooms'].find_one({'_id': id})
@@ -227,12 +204,25 @@ async def get_bingo_leaderboard(id, user_info):
     if not check_is_room_owner(room, user_email):
         return {"message": "Authentication error"}, 401
     submissions = room['bingo']['submissions']
-    players = []
-    for name, submission in submissions.items():
-        players.append({"name": name, "score": submission['score']})
-    players.sort(key=custom_sort)
-    return {"players": players[:3]}, 200
+    players = get_players_sorted_by_score(submissions)
+    players_without_timestamp = get_players_without_timestamp(players)
+    
+    return {"players": players_without_timestamp[:3]}, 200
 
 def custom_sort(player):
     # Sort by descending score and then ascending timestamp
     return (-player["score"], player["timestamp"])
+
+def get_players_sorted_by_score(submissions):
+    players = []
+    for name, submission in submissions.items():
+        players.append({"name": name, "score": submission['score'], "timestamp": submission['timestamp']})
+    players.sort(key=custom_sort)
+    return players
+
+def get_players_without_timestamp(players):
+    players_without_timestamp = []
+    for index, player in enumerate(players):
+        players_without_timestamp.append({"position": index, "name": player['name'],
+                                          "score": player['score']})
+    return players_without_timestamp

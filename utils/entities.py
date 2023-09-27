@@ -176,5 +176,5 @@ async def get_bingo_context(user_email):
     if not user:
         logging.error(f"User {user_email} not found")
         return {"message": "User not found"}, 404
-    fields = user["bingo"]["bingoContext"]
+    fields = user["bingo"]["fields"]
     return {"fields": fields}, 200

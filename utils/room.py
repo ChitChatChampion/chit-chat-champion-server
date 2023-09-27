@@ -4,12 +4,13 @@ from quart import jsonify
 import logging
 from utils.user import get_user_info
 from utils.utils import checkResponseSuccess
+import hashlib
 
 async def generate_unique_room_id_from(game_type, user_email):
     # Hash the user's email and concat it with game type to generate a unique room id
     # This is to ensure that we don't have thousands of room ids lying around in the db
     max_room_id_length = 6
-    room_id = game_type[:2] + str(hash(user_email))[:max_room_id_length - 2]
+    room_id = game_type[:2] + str(hashlib.sha256(bytes(user_email, 'utf-8')).hexdigest()())[:max_room_id_length - 2]
 
     assert(len(room_id) == max_room_id_length)
 

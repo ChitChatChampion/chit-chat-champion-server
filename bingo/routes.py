@@ -161,7 +161,15 @@ async def get_bingo_room_checks(id):
         user_email = bingo_auth_response[0].get('email')
         isOwner = check_is_room_owner(room, user_email)
     hasStarted = room['bingo']['has_started']
-    return {"isOwner": isOwner, "hasStarted": hasStarted}, 200
+    hasSubmitted = False
+    player_name = request.headers.get('player_name')
+    if player_name:
+        submissions = room['bingo']['submissions']
+        if player_name in submissions:
+            hasSubmitted = True
+
+    return {"isOwner": isOwner, "hasStarted": hasStarted,
+            "hasSubmitted": hasSubmitted}, 200
 
 # unauthenticated
 @bingo_bp.route('/<id>/squares', methods=['GET'])

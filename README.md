@@ -1,4 +1,4 @@
-# backend
+# CCC Backend
 
 ## Setup
 1. Run `python3 -m venv env` to create a virtual environment called "env"

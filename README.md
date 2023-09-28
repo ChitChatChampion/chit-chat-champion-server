@@ -9,6 +9,12 @@
 ## Start Server
 1. Run `python3 main.py`
 
+## Environment Variables
+```
+OPENAI_API_KEY: For ChatGPT usage.
+MONGODB_URI: Link to the Mongo Atlas instance.
+```
+
 ## TRADE OFFER
 
 ### User

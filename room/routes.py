@@ -33,14 +33,13 @@ async def create_bingo_room(user_info):
 @room_bp.route('/<room_id>', methods=["GET"])
 async def get_room(room_id):
     room = await get_db()["Rooms"].find_one({"_id": room_id})
-    if not room or not room['is_published']:
+    if not room:
         return {"message": "Room not found"}, 404
     game_type = room["game_type"]
-    if game_type == 'csc' or 'bb':
+    if game_type == 'csc' or game_type == 'bb':
         formatted_qns = format_entities_for_fe(room["questions"])
         return {"game_type": game_type, "questions": formatted_qns}, 200
     elif game_type == 'bingo':
-        # likely different format of return with squares etc
         return {"game_type": game_type}, 200
     elif game_type == 'quiz':
         # likely different format of return with questions having solutions etc

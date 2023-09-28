@@ -7,7 +7,10 @@ async def generate_unique_room_id_from(game_type, user_email):
     # Find room that may have been created by the same user for the same game_type
     room = await get_db()["Rooms"].find_one({'user_id': user_email, 'game_type': game_type})
     if room:
-        return room['_id']
+        # delete room
+        existing_id = room['_id']
+        await get_db()["Rooms"].delete_one({'_id': existing_id})
+        return existing_id
     # If no room found, generate a new room id
     while True:
         room_id = generate(size=6)

@@ -27,9 +27,9 @@ async def is_owner(room_id):
     if not checkResponseSuccess(user_info):
         return user_info # will contain error and status message
     user_email = user_info[0].get("email")
-    room = await get_db()["Rooms"].find_one({"user_id": user_email})
+    room = await get_db()["Rooms"].find_one({"_id": room_id})
 
-    if room.get('_id') == room_id:
+    if room.get('user_id') == user_email:
         return {"is_owner": True}, 200
     else:
         return {"is_owner": False}, 200

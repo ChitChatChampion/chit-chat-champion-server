@@ -188,7 +188,7 @@ async def submit_bingo_squares(id):
     name = request_json.get('name')
     score = request_json.get('score')
     timestamp = request_json.get('timestamp')
-    if not name or not score or not timestamp:
+    if not name or score is None or not timestamp:
         return {"message": "Invalid form data"}, 400
 
     room = await get_db()['Rooms'].find_one({'_id': id})

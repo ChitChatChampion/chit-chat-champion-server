@@ -1,9 +1,9 @@
 from quart import Blueprint, request
 import prompts.prompts as prompts
 from database import get_db
-from utils.utils import checkResponseSuccess, format_qns_for_fe
+from utils.utils import checkResponseSuccess, format_entities_for_fe
 from utils.user import authenticate
-from utils.room import create_room, set_room_published_status
+from utils.room import create_questions_room, set_room_published_status, create_bingo_room_helper
 
 
 room_bp = Blueprint('room_bp', __name__, url_prefix='/room')
@@ -12,12 +12,17 @@ room_bp = Blueprint('room_bp', __name__, url_prefix='/room')
 @room_bp.route('/csc/create', methods=["POST"])
 @authenticate
 async def create_csc_room(user_info):
-    return await create_room(user_info, 'csc')
+    return await create_questions_room(user_info, 'csc')
 
 @room_bp.route('/bb/create', methods=["POST"])
 @authenticate
 async def create_bb_room(user_info):
-    return await create_room(user_info, 'bb')
+    return await create_questions_room(user_info, 'bb')
+
+@room_bp.route('/bingo/create', methods=["POST"])
+@authenticate
+async def create_bingo_room(user_info):
+    return await create_bingo_room_helper(user_info)
 
 # GET
 # /room/:id
@@ -28,15 +33,17 @@ async def create_bb_room(user_info):
 @room_bp.route('/<room_id>', methods=["GET"])
 async def get_room(room_id):
     room = await get_db()["Rooms"].find_one({"_id": room_id})
-    if not room or not room['is_published']:
+    if not room:
         return {"message": "Room not found"}, 404
     game_type = room["game_type"]
-    if game_type == 'csc' or 'bb':
-        formatted_qns = format_qns_for_fe(room["questions"])
+    if game_type == 'csc' or game_type == 'bb':
+        formatted_qns = format_entities_for_fe(room["questions"])
         return {"game_type": game_type, "questions": formatted_qns}, 200
+    elif game_type == 'bingo':
+        return {"game_type": game_type}, 200
     elif game_type == 'quiz':
         # likely different format of return with questions having solutions etc
-        return {"message": f"not yet implemented for {game_type}"}, 404
+        return {"message": f"not yet implemented for {game_type}"}, 404     
     else:
         return {"message": f"Unrecognised game type {game_type}"}, 404
         

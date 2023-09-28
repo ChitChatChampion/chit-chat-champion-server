@@ -7,7 +7,10 @@ async def generate_unique_room_id_from(game_type, user_email):
     # Find room that may have been created by the same user for the same game_type
     room = await get_db()["Rooms"].find_one({'user_id': user_email, 'game_type': game_type})
     if room:
-        return room['_id']
+        # delete room
+        existing_id = room['_id']
+        await get_db()["Rooms"].delete_one({'_id': existing_id})
+        return existing_id
     # If no room found, generate a new room id
     while True:
         room_id = generate(size=6)
@@ -31,7 +34,7 @@ async def set_room_published_status(room_id, set_is_published):
 
 # This create room should only be used for csc, bb 
 # and other games with 'questions'/format
-async def create_room(user_info, game_type):
+async def create_questions_room(user_info, game_type):
     user_email = user_info.get('email')
 
     logging.info(f"{user_email}: Creating {game_type} room")
@@ -62,3 +65,29 @@ async def create_room(user_info, game_type):
         'questions': questions
         }}, upsert=True)
     return {"id": room_id}, 201
+
+async def create_bingo_room_helper(user_info):
+    user_email = user_info.get('email')
+    logging.info(f"{user_email}: Creating bingo room")
+    user = await get_db()['Users'].find_one({"_id": user_email})
+    fields = user['bingo']['fields']
+    room_id = await generate_unique_room_id_from('bingo', user_email)
+    await get_db()['Rooms'].update_one(
+        {'_id': room_id},
+        {'$set': {
+            'user_id': user_email,
+            'game_type': 'bingo',
+            'is_published': False,
+            'bingo': {
+                'has_started': False,
+                'fields': fields,
+                'squares': [],
+                'player_info': [],
+                'player_names': [],
+                'submissions': {}
+            }
+        }}, upsert=True)
+    return {"id": room_id}, 200
+
+def check_is_room_owner(room, user_email):
+    return room['user_id'] == user_email

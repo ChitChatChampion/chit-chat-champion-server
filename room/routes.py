@@ -41,7 +41,7 @@ async def get_room(room_id):
         return {"game_type": game_type, "questions": formatted_qns}, 200
     elif game_type == 'bingo':
         # likely different format of return with squares etc
-        return {"message": f"not yet implemented for {game_type}"}, 404
+        return {"game_type": game_type}, 200
     elif game_type == 'quiz':
         # likely different format of return with questions having solutions etc
         return {"message": f"not yet implemented for {game_type}"}, 404     

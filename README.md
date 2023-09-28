@@ -9,7 +9,7 @@
 ## Start Server
 1. Run `python3 main.py`
 
-## TRADE DEAL
+## TRADE OFFER
 
 ### User
 ```

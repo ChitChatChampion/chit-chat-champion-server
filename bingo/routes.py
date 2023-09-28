@@ -164,8 +164,8 @@ async def get_bingo_room_checks(id):
     hasSubmitted = False
     player_name = request.headers.get('player_name')
     if player_name:
-        submissions = room['bingo']['submissions']
-        if player_name in submissions:
+        form_submissions = room['bingo']['player_names']
+        if player_name in form_submissions:
             hasSubmitted = True
 
     return {"isOwner": isOwner, "hasStarted": hasStarted,

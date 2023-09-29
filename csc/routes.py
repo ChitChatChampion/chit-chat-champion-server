@@ -1,6 +1,6 @@
 import json
 import logging
-from quart import Blueprint, request, websocket
+from quart import Blueprint, request
 import prompts.prompts as prompts
 from utils.user import authenticate
 from utils.entities import save_bb_csc_contexts, get_questions_contexts
@@ -22,27 +22,3 @@ async def save_csc_context(user_info):
     user_email = user_info.get('email')
 
     return await save_bb_csc_contexts(user_email, request_json, 'csc')
-
-def add_player_to_room(room_id):
-    if room_id in room_to_socket:
-        room_to_socket[room_id].append(websocket._get_current_object())
-    else:
-        room_to_socket[room_id] = [websocket._get_current_object()]
-
-room_to_socket = {}
-@csc_bp.websocket('/ws')
-async def ws():
-    while True:
-        data = json.loads(await websocket.receive())
-
-        # Add all players to rooms upon joining
-        if "room_id" in data:
-            room_id = data["room_id"]
-            add_player_to_room(room_id)
-
-        print(room_to_socket)
-
-        # Send message to all players in room to close the room when the room is closed
-        if data.get("type", "") == "close_room":
-            for socket in room_to_socket[data.get("room_id")]:
-                await socket.send_json({"type": "close_room", "message": "Room closed."})

@@ -1,4 +1,5 @@
-from quart import Blueprint, request
+import json
+from quart import Blueprint, request, websocket
 import prompts.prompts as prompts
 from database import get_db
 from utils.utils import checkResponseSuccess, format_entities_for_fe
@@ -96,3 +97,29 @@ async def unpublish_room():
     await get_db()["Rooms"].delete_one({"_id": room_id})
 
     return {"message": f"Room {room_id} unpublished successfully"}, 200
+
+def add_player_to_room(room_id):
+    if room_id in room_to_socket:
+        room_to_socket[room_id].append(websocket._get_current_object())
+    else:
+        room_to_socket[room_id] = [websocket._get_current_object()]
+
+room_to_socket = {}
+
+@room_bp.websocket('/ws')
+async def ws():
+    while True:
+        data = json.loads(await websocket.receive())
+
+        # Add all players to rooms upon joining
+        if "room_id" in data:
+            room_id = data["room_id"]
+            add_player_to_room(room_id)
+
+        print(room_to_socket)
+
+        # Send message to all players in room to close the room when the room is closed
+        if data.get("type", "") == "close_room":
+            for socket in room_to_socket[data.get("room_id")]:
+                await socket.send_json({"type": "close_room", "message": "Room closed."})
+            del room_to_socket[data.get("room_id")]

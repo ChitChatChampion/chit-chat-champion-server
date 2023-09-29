@@ -2,6 +2,7 @@ from quart import request, jsonify
 import logging
 import requests
 from database import get_db
+from functools import wraps
 
 
 USERINFO_URL = "https://www.googleapis.com/oauth2/v3/userinfo"
@@ -14,23 +15,17 @@ async def signup_user(user_info):
     # if user with email does not exist, add user to db
     try:
         if not await db["Users"].find_one({"_id": email}):
-            await db["Users"].insert_one({
-                '_id': email,
-                'name': name,
-                'baseContext': {},
-                'bb': {
-                    'bbContext': {},
-                    'questions': {}
-                },
-                'csc': {
-                    'cscContext': {},
-                    'questions': {}
-                },
-                'bingo': {
-                    'bingoContext': {},
-                    'questions': {}
+            # some functions expect these fields to exist even if empty
+            await db["Users"].insert_one(
+                {
+                    "_id": email,
+                    "name": name,
+                    "baseContext": {},
+                    "bb": {"bbContext": {}, "questions": {}},
+                    "csc": {"cscContext": {}, "questions": {}},
+                    "bingo": {"fields": {}},
                 }
-            })
+            )
             logging.info(f"Added user {email} to database")
         else:
             logging.info("User already exists in database")
@@ -38,34 +33,63 @@ async def signup_user(user_info):
         logging.error(e)
         return jsonify({"message": "Error trying to verify user"}), 500
 
-async def get_user_info():
-    # Get the access token from the request headers
-    # logging.error(request.headers)
-    access_token =  request.headers.get("Access-Token")
 
+# Define the authentication decorator
+def authenticate(func):
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        access_token = request.headers.get("Access-Token")
+        if not access_token:
+            logging.error("Access token missing")
+            return jsonify({"message": "Access token missing"}), 401
+
+        headers = {"Authorization": f"Bearer {access_token}"}
+
+        try:
+            response = requests.get(USERINFO_URL, headers=headers)
+
+            if response.status_code == 200:
+                logging.info("Successfully fetched user info")
+                user_info = response.json()
+                await signup_user(user_info)
+                kwargs['user_info'] = user_info  # Pass user_info as a keyword argument
+                return await func(*args, **kwargs)
+            else:
+                return jsonify({"message": "Access token expired"}), response.status_code
+        except Exception as e:
+            logging.error(e)
+            return jsonify({"message": "Error trying to verify user"}), 500
+
+    return wrapper
+
+# bingo auth is used for routes where users do NOT have to be authenticated
+# but we want to know if they are
+async def bingo_auth():
+    access_token = request.headers.get("Access-Token")
     if not access_token:
         logging.error("Access token missing")
         return jsonify({"message": "Access token missing"}), 401
 
-    # Set up headers for the userinfo request
-    headers = {
-        "Authorization": f"Bearer {access_token}"
-    }
+    headers = {"Authorization": f"Bearer {access_token}"}
 
     try:
-        # Make a GET request to the userinfo endpoint
         response = requests.get(USERINFO_URL, headers=headers)
 
-        # Check if the request was successful
         if response.status_code == 200:
-            user_info = response.json()
-            name = user_info.get("name")
-            email = user_info.get("email")
-            await signup_user(user_info)
             logging.info("Successfully fetched user info")
-            return {"status": "success", "name": name, "email": email}, response.status_code
+            user_info = response.json()
+            await signup_user(user_info)
+            return user_info, 200
         else:
             return jsonify({"message": "Access token expired"}), response.status_code
     except Exception as e:
         logging.error(e)
         return jsonify({"message": "Error trying to verify user"}), 500
+
+# Define a fake auth decorator for testing endpoints
+def fake_authenticate(func):
+    @wraps(func)
+    async def wrapper(*args, **kwargs):
+        kwargs['user_info'] = {"email": "fake@email.com", "name": "FAKE"}
+        return await func(*args, **kwargs)
+    return wrapper

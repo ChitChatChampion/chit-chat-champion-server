@@ -27,8 +27,8 @@ def checkResponseSuccess(response):
     status = response[1]
     return status == 200 or status == 201
 
-def format_qns_for_fe(questions):
-    return [{"id": id, "content": content} for id, content in questions.items()]
+def format_entities_for_fe(entities_dict):
+    return [{"id": id, "content": content} for id, content in entities_dict.items()]
 
 def openai_generate_response(user_email, messages):
     # escape special characters in messages

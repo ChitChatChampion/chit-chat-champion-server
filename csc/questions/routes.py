@@ -1,11 +1,11 @@
-from quart import Blueprint, request, jsonify
+from quart import Blueprint, request
 import prompts.prompts as prompts
-from database import check_db, get_db
+from database import check_db
 import logging
-from utils.user import get_user_info
-from utils.utils import checkResponseSuccess, format_qns_for_fe, openai_generate_response
-from utils.questions import add_questions_to_user_collection, save_contexts, \
-    get_questions, update_question, create_question, delete_question
+from utils.user import authenticate
+from utils.utils import checkResponseSuccess, format_entities_for_fe, openai_generate_response
+from utils.entities import add_questions_to_user_collection, save_bb_csc_contexts, \
+    get_entities, update_entity, create_entity, delete_entity
 
 csc_questions_bp = Blueprint('csc_questions_bp', __name__, url_prefix='/csc/questions')
 
@@ -18,35 +18,36 @@ async def check_database():
     return res
 
 @csc_questions_bp.route('/', methods=['GET'])
-async def get_csc_questions():
-    return await get_questions('csc')
+@authenticate
+async def get_csc_questions(user_info):
+    return await get_entities(user_info, 'csc')
 
 @csc_questions_bp.route('/<id>', methods=['PUT'])
-async def update_csc_question(id):
-    return await update_question(id, 'csc')
+@authenticate
+async def update_csc_question(id, user_info):
+    return await update_entity(id, user_info, 'csc')
 
 @csc_questions_bp.route('/create', methods=['POST'])
-async def create_csc_question():
-    return await create_question('csc')
+@authenticate
+async def create_csc_question(user_info):
+    return await create_entity(user_info, 'csc')
 
 @csc_questions_bp.route('/<id>', methods=['DELETE'])
-async def delete_csc_question(id):
-    return await delete_question(id, 'csc')
+@authenticate
+async def delete_csc_question(id, user_info):
+    return await delete_entity(id, user_info, 'csc')
     
 # This function is called when the user clicks the "Generate Questions" button
 # It saves the baseContext and cscContext in the database in the Users collection
 # It also generates the questions in the background and saves them in the database in the Users collection
 # Generated questions are added on to the user's existing questions
 @csc_questions_bp.route('/generate', methods=['POST'])
-async def ai_generate_csc_questions():
-    user_info = await get_user_info()
-    if not checkResponseSuccess(user_info):
-        logging.error("User not found")
-        return user_info # will contain error and status message
-    user_email = user_info[0].get("email")
+@authenticate
+async def ai_generate_csc_questions(user_info):
+    user_email = user_info.get('email')
 
     request_json = await request.json
-    contexts_info = save_contexts(user_email, request_json, 'csc')
+    contexts_info = save_bb_csc_contexts(user_email, request_json, 'csc')
     if not checkResponseSuccess(contexts_info):
         return contexts_info
     # generate questions
@@ -62,7 +63,7 @@ async def ai_generate_csc_questions():
         return db_response
 
     db_formatted_questions = db_response[0]
-    fe_formatted_questions = format_qns_for_fe(db_formatted_questions)
+    fe_formatted_questions = format_entities_for_fe(db_formatted_questions)
 
     logging.info({"questions": fe_formatted_questions})
     return {"questions": fe_formatted_questions}, 201

@@ -2,32 +2,26 @@ import json
 import logging
 from quart import Blueprint, request, websocket
 import prompts.prompts as prompts
-from database import get_db
-from utils.user import get_user_info
-from utils.utils import checkResponseSuccess, format_qns_for_fe
-from utils.questions import save_contexts, get_contexts
+from utils.user import authenticate
+from utils.entities import save_bb_csc_contexts, get_questions_contexts
 
 csc_bp = Blueprint('csc_bp', __name__, url_prefix='/csc')
 
 # Get csc context from user whose access token is in response header
 @csc_bp.route('/context', methods=["GET"])
-async def get_csc_context():
-    user_info = await get_user_info()
-    if not checkResponseSuccess(user_info):
-        return user_info # will contain error and status message
-    user_email = user_info[0].get("email")
-    return await get_contexts(user_email, 'csc')
+@authenticate
+async def get_csc_context(user_info):
+    user_email = user_info.get('email')
+    return await get_questions_contexts(user_email, 'csc')
 
 # creates or updates a user's csc (and/or base) context
 @csc_bp.route('/context', methods=["POST"])
-async def save_csc_context():
+@authenticate
+async def save_csc_context(user_info):
     request_json = await request.json
-    user_info = await get_user_info()
-    if not checkResponseSuccess(user_info):
-        return user_info # will contain error and status message
-    user_email = user_info[0].get("email")
+    user_email = user_info.get('email')
 
-    return await save_contexts(user_email, request_json, 'csc')
+    return await save_bb_csc_contexts(user_email, request_json, 'csc')
 
 def add_player_to_room(room_id):
     if room_id in room_to_socket:

@@ -5,7 +5,7 @@ from quart import jsonify, request
 from utils.utils import getBaseContext, format_entities_for_fe
 
 MIN_INPUT_PROMPT_LENGTH = 3
-MAX__INPUT_PROMPT_LENGTH = 100
+MAX__INPUT_PROMPT_LENGTH = 300
 
 async def add_questions_to_user_collection(ai_questions_arr, user_email, game_type):
     try:

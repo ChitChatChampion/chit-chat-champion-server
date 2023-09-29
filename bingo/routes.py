@@ -1,4 +1,5 @@
-from quart import Blueprint, request
+import json
+from quart import Blueprint, request, websocket
 import prompts.prompts as prompts
 from database import get_db
 import logging
@@ -252,3 +253,33 @@ async def start_bingo_game(id, user_info):
                                             'bingo.has_started': True
                                         }})
     return {"message": "success"}, 200
+
+room_to_players_socket = {}
+room_to_owner_socket = {}
+
+def add_player_to_room(room_id):
+    if room_id in room_to_players_socket:
+        room_to_players_socket[room_id].append(websocket._get_current_object())
+    else:
+        room_to_players_socket[room_id] = [websocket._get_current_object()]
+
+def add_owner_to_room(room_id):
+    room_to_owner_socket[room_id] = websocket._get_current_object()
+
+async def send_msg_to_owner_on_player_join(room_id, is_owner, msg_type):
+    # TODO: send an access token and check whether they are the owner instead
+    # Add owner to room
+    if is_owner:
+        add_owner_to_room(room_id)
+
+    # Send message to owner to refresh his route when player joins
+    if msg_type == "enter_room" and room_id in room_to_owner_socket:
+        logging.info("Sending message to owner")
+        await room_to_owner_socket[room_id].send_json({"type": "player_join", "message": "Player joined."})
+
+@bingo_bp.websocket('/ws')
+async def ws():
+    while True:
+        data = json.loads(await websocket.receive())
+
+        await send_msg_to_owner_on_player_join(data.get("room_id"), data.get("is_owner", False), data.get("type", ""))

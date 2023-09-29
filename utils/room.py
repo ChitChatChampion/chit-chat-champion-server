@@ -71,6 +71,7 @@ async def create_bingo_room_helper(user_info):
     logging.info(f"{user_email}: Creating bingo room")
     user = await get_db()['Users'].find_one({"_id": user_email})
     fields = user['bingo']['fields']
+    logging.info(f"{user_email}: Fields: {fields}")
     for _, field in fields.items():
         if field == "":
             return {"message": "Cannot create room with blank fields"}, 400

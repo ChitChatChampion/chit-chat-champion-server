@@ -277,9 +277,20 @@ async def send_msg_to_owner_on_player_join(room_id, is_owner, msg_type):
         logging.info("Sending message to owner")
         await room_to_owner_socket[room_id].send_json({"type": "player_join", "message": "Player joined."})
 
+async def send_msg_to_owner_on_gaining_points(room_id, is_owner, msg_type):
+    # Add owner to room
+    if is_owner:
+        add_owner_to_room(room_id)
+
+    # Send message to owner to refresh his route when player gains points
+    if msg_type == "points_gain" and room_id in room_to_owner_socket:
+        logging.info("Sending gained points message to owner")
+        await room_to_owner_socket[room_id].send_json({"type": "points_gain", "message": "Player gained points."})
+
 @bingo_bp.websocket('/ws')
 async def ws():
     while True:
         data = json.loads(await websocket.receive())
 
         await send_msg_to_owner_on_player_join(data.get("room_id"), data.get("is_owner", False), data.get("type", ""))
+        await send_msg_to_owner_on_gaining_points(data.get("room_id"), data.get("is_owner", False), data.get("type", ""))

@@ -52,7 +52,7 @@ def parse_openai_response(openai_response):
     if openai_response[0] == '{' and openai_response[-1] == '}':
         try:
             openai_response_json = json.loads(openai_response)
-            return openai_response_json['data'], openai_response_json['message']
+            return openai_response_json.get('data', []), openai_response_json['message']
         except json.JSONDecodeError as e:
             logging.info(f"Openai response JSON parsing error: {e}")
             return [], "Invalid Query"

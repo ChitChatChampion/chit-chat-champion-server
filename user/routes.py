@@ -25,9 +25,9 @@ async def get_user_info_test(_):
 @authenticate
 async def is_owner(room_id, user_info):
     user_email = user_info.get("email")
-    room = await get_db()["Rooms"].find_one({"user_id": user_email})
-
-    if room.get('_id') == room_id:
+    room = await get_db()["Rooms"].find_one({"_id": room_id})
+    if room.get('user_id') == user_email:
         return {"is_owner": True}, 200
     else:
         return {"is_owner": False}, 200
+
